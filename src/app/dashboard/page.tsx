@@ -26,6 +26,89 @@ import { KPIsDashboard } from '@/lib/supabase'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 import { supabase } from '@/lib/supabase'
 
+function ReportesRecientesList() {
+  const router = useRouter()
+  const [reportesRecientes, setReportesRecientes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    cargarReportesRecientes()
+  }, [])
+
+  async function cargarReportesRecientes() {
+    try {
+      const { data, error } = await supabase
+        .from('reportes_inspeccion')
+        .select(`
+          id,
+          timestamp_completado,
+          tiene_problemas,
+          score_cumplimiento,
+          activo:activos!inner(nombre),
+          usuario:usuarios!inner(nombre_completo)
+        `)
+        .order('timestamp_completado', { ascending: false })
+        .limit(10)
+
+      if (error) throw error
+      setReportesRecientes(data || [])
+    } catch (error) {
+      console.error('Error cargando reportes recientes:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return <div className="text-center py-4 text-gray-500">Cargando...</div>
+  }
+
+  if (reportesRecientes.length === 0) {
+    return <div className="text-center py-4 text-gray-500">No hay reportes recientes</div>
+  }
+
+  return (
+    <div className="space-y-2">
+      {reportesRecientes.map((reporte) => {
+        const fecha = new Date(reporte.timestamp_completado).toLocaleString('es-CL', {
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+
+        return (
+          <button
+            key={reporte.id}
+            onClick={() => router.push(`/dashboard/reportes/${reporte.id}`)}
+            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded text-left transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              {reporte.tiene_problemas ? (
+                <AlertTriangle className="w-4 h-4 text-red-500" />
+              ) : (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              )}
+              <div>
+                <p className="text-sm font-medium text-gray-900">{reporte.activo?.nombre}</p>
+                <p className="text-xs text-gray-500">{reporte.usuario?.nombre_completo}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500">{fecha}</span>
+              <span className={`text-xs font-semibold ${
+                reporte.tiene_problemas ? 'text-red-600' : 'text-green-600'
+              }`}>
+                {reporte.score_cumplimiento}%
+              </span>
+            </div>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -241,7 +324,7 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
-          {/* Lista de Reportes Recientes */}
+        {/* Lista de Reportes Recientes */}
         <div className="bg-white rounded-lg shadow p-6 mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Reportes Recientes</h2>
@@ -252,41 +335,7 @@ export default function DashboardPage() {
               Ver todos →
             </button>
           </div>
-          <div className="space-y-2">
-            {tendencia.slice(0, 10).map((dia: any, idx: number) => (
-              <button
-                key={idx}
-                onClick={async () => {
-                  // Obtener primer reporte de ese día
-                  const { data } = await supabase
-                    .from('reportes_inspeccion')
-                    .select('id')
-                    .gte('timestamp_completado', dia.fecha)
-                    .lt('timestamp_completado', new Date(new Date(dia.fecha).getTime() + 86400000).toISOString())
-                    .limit(1)
-                    .single()
-                  
-                  if (data) {
-                    router.push(`/dashboard/reportes/${data.id}`)
-                  }
-                }}
-                className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-900">{dia.fecha}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-500">{dia.total_inspecciones} inspecciones</span>
-                  <span className={`text-sm font-semibold ${
-                    dia.reportes_con_problemas > 0 ? 'text-red-600' : 'text-green-600'
-                  }`}>
-                    {dia.reportes_con_problemas} problemas
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
+          <ReportesRecientesList />
         </div>
       </main>
     </div>
