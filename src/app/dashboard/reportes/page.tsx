@@ -231,7 +231,7 @@ export default function ReportesPage() {
           {/* Segunda fila: Turno y Operador */}
           <div className="flex gap-4">
             {/* Turno */}
-            <div className="w-64">
+            <div className="w-70">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Turno
               </label>
