@@ -16,18 +16,20 @@ import {
 import { getCurrentUser } from '@/lib/auth'
 import { obtenerReportesConFiltros } from '@/lib/reportes-service'
 import { obtenerActivos } from '@/lib/activos-service'
-import { Activo } from '@/lib/supabase'
+import { Activo, supabase } from '@/lib/supabase'
 
 export default function ReportesPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [reportes, setReportes] = useState<any[]>([])
   const [activos, setActivos] = useState<Activo[]>([])
+  const [usuarios, setUsuarios] = useState<any[]>([])
   
   // Filtros
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
   const [activoSeleccionado, setActivoSeleccionado] = useState<number | undefined>()
+  const [operadorSeleccionado, setOperadorSeleccionado] = useState<string | undefined>()
   const [soloProblemas, setSoloProblemas] = useState(false)
   const [turnoSeleccionado, setTurnoSeleccionado] = useState<number | undefined>()
   const [busqueda, setBusqueda] = useState('')
@@ -46,7 +48,8 @@ export default function ReportesPage() {
 
     await Promise.all([
       cargarReportes(),
-      cargarActivos()
+      cargarActivos(),
+      cargarUsuarios()
     ])
     
     setLoading(false)
@@ -59,6 +62,11 @@ export default function ReportesPage() {
       activoSeleccionado,
       soloProblemas
     )
+    
+    // Filtrar por operador si está seleccionado
+    if (operadorSeleccionado) {
+      data = data.filter(r => r.usuario_id === operadorSeleccionado)
+    }
     
     // Filtrar por turno localmente si está seleccionado
     if (turnoSeleccionado) {
@@ -73,6 +81,21 @@ export default function ReportesPage() {
     setActivos(data)
   }
 
+  async function cargarUsuarios() {
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('id, nombre_completo, rol')
+        .eq('rol', 'OPERADOR')
+        .order('nombre_completo', { ascending: true })
+      
+      if (error) throw error
+      setUsuarios(data || [])
+    } catch (error) {
+      console.error('Error cargando usuarios:', error)
+    }
+  }
+
   async function aplicarFiltros() {
     setLoading(true)
     await cargarReportes()
@@ -83,6 +106,7 @@ export default function ReportesPage() {
     setFechaDesde('')
     setFechaHasta('')
     setActivoSeleccionado(undefined)
+    setOperadorSeleccionado(undefined)
     setTurnoSeleccionado(undefined)
     setSoloProblemas(false)
     setBusqueda('')
@@ -140,7 +164,7 @@ export default function ReportesPage() {
             <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {/* Búsqueda */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -202,7 +226,12 @@ export default function ReportesPage() {
                 ))}
               </select>
             </div>
-             <div>
+          </div>
+
+          {/* Segunda fila: Turno y Operador */}
+          <div className="flex gap-4">
+            {/* Turno */}
+            <div className="w-64">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Turno
               </label>
@@ -215,6 +244,25 @@ export default function ReportesPage() {
                 <option value="1">Turno 1 (Noche)</option>
                 <option value="2">Turno 2 (Mañana)</option>
                 <option value="3">Turno 3 (Tarde)</option>
+              </select>
+            </div>
+
+            {/* Operador */}
+            <div className="w-72">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Operador
+              </label>
+              <select
+                value={operadorSeleccionado || ''}
+                onChange={(e) => setOperadorSeleccionado(e.target.value || undefined)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Todos</option>
+                {usuarios.map(usuario => (
+                  <option key={usuario.id} value={usuario.id}>
+                    {usuario.nombre_completo}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
