@@ -88,12 +88,22 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold text-gray-900">Panel de Supervisor</h1>
               <p className="text-sm text-gray-600">TULSA S.A. - {usuario?.nombre_completo}</p>
             </div>
-            <button
-              onClick={() => router.push('/login')}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-            >
-              Cerrar Sesión
-            </button>
+            <div className="flex items-center space-x-3">
+              {/* Botón Gestión de Grúas */}
+              <button
+                onClick={() => router.push('/dashboard/gruas')}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                <Truck className="w-4 h-4 mr-2" />
+                Gestión de Grúas
+              </button>
+              <button
+                onClick={() => router.push('/login')}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
           </div>
         </div>
       </header>
