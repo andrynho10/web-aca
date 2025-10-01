@@ -83,6 +83,7 @@ export default function ReportesPage() {
     setFechaDesde('')
     setFechaHasta('')
     setActivoSeleccionado(undefined)
+    setTurnoSeleccionado(undefined)
     setSoloProblemas(false)
     setBusqueda('')
   }
