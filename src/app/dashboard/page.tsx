@@ -125,7 +125,7 @@ export default function DashboardPage() {
             icon={TrendingUp}
           />
           <KPICard
-            title="Con Problemas"
+            title="Reportes con Problemas"
             value={kpis?.reportes_con_problemas || 0}
             subtitle={`${kpis?.porcentaje_con_problemas || 0}% del total`}
             icon={AlertTriangle}
@@ -171,7 +171,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-red-600">{grua.reportes_con_problemas} problemas</p>
+                    <p className="font-semibold text-red-600">{grua.reportes_con_problemas} Reportes con Problemas</p>
                     <p className="text-sm text-gray-500">{grua.porcentaje_problemas}%</p>
                   </div>
                 </div>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
                           <p className="font-semibold">{data.score_promedio}%</p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Problemas</p>
+                          <p className="text-gray-500">Reportes con Problemas</p>
                           <p className="font-semibold text-red-600">{data.con_problemas}</p>
                         </div>
                         <div>
