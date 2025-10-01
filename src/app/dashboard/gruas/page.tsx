@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Truck, Power, PowerOff, Clock, AlertCircle, CheckCircle } from 'lucide-react'
+import { Forklift, Power, PowerOff, Clock, AlertCircle, CheckCircle } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { obtenerActivos, cambiarEstadoActivo } from '@/lib/activos-service'
 import { Activo } from '@/lib/supabase'
@@ -110,7 +110,7 @@ export default function GruasPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="bg-blue-50 rounded-full p-3">
-                <Truck className="w-6 h-6 text-blue-600" />
+                <Forklift className="w-6 h-6 text-blue-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Total Grúas</p>
@@ -158,7 +158,7 @@ export default function GruasPage() {
                     <div className={`rounded-full p-3 ${
                       activo.es_operativa ? 'bg-green-50' : 'bg-gray-100'
                     }`}>
-                      <Truck className={`w-6 h-6 ${
+                      <Forklift className={`w-6 h-6 ${
                         activo.es_operativa ? 'text-green-600' : 'text-gray-400'
                       }`} />
                     </div>

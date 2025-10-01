@@ -7,9 +7,9 @@ import {
   AlertTriangle, 
   CheckCircle, 
   Clock,
+  Forklift,
   TrendingUp,
   Users,
-  Truck,
   Timer
 } from 'lucide-react'
 import { KPICard } from '@/components/KPICard'
@@ -94,7 +94,7 @@ export default function DashboardPage() {
                 onClick={() => router.push('/dashboard/gruas')}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
-                <Truck className="w-4 h-4 mr-2" />
+                <Forklift className="w-4 h-4 mr-2" />
                 Gestión de Grúas
               </button>
               <button
@@ -164,7 +164,7 @@ export default function DashboardPage() {
               {topGruas.map((grua, idx) => (
                 <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                   <div className="flex items-center">
-                    <Truck className="w-5 h-5 text-gray-400 mr-3" />
+                    <Forklift className="w-5 h-5 text-gray-400 mr-3" />
                     <div>
                       <p className="font-medium text-gray-900">{grua.activo_nombre}</p>
                       <p className="text-sm text-gray-500">{grua.total_reportes} reportes</p>
