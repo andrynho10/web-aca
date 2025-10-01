@@ -10,7 +10,8 @@ import {
   Forklift,
   TrendingUp,
   Users,
-  Timer
+  Timer,
+  Calendar
 } from 'lucide-react'
 import { KPICard } from '@/components/KPICard'
 import { getCurrentUser } from '@/lib/auth'
@@ -23,6 +24,7 @@ import {
 } from '@/lib/dashboard-service'
 import { KPIsDashboard } from '@/lib/supabase'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
+import { supabase } from '@/lib/supabase'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -236,6 +238,53 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+          {/* Lista de Reportes Recientes */}
+        <div className="bg-white rounded-lg shadow p-6 mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Reportes Recientes</h2>
+            <button
+              onClick={() => router.push('/dashboard/reportes')}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Ver todos →
+            </button>
+          </div>
+          <div className="space-y-2">
+            {tendencia.slice(0, 10).map((dia: any, idx: number) => (
+              <button
+                key={idx}
+                onClick={async () => {
+                  // Obtener primer reporte de ese día
+                  const { data } = await supabase
+                    .from('reportes_inspeccion')
+                    .select('id')
+                    .gte('timestamp_completado', dia.fecha)
+                    .lt('timestamp_completado', new Date(new Date(dia.fecha).getTime() + 86400000).toISOString())
+                    .limit(1)
+                    .single()
+                  
+                  if (data) {
+                    router.push(`/dashboard/reportes/${data.id}`)
+                  }
+                }}
+                className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-900">{dia.fecha}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-500">{dia.total_inspecciones} inspecciones</span>
+                  <span className={`text-sm font-semibold ${
+                    dia.reportes_con_problemas > 0 ? 'text-red-600' : 'text-green-600'
+                  }`}>
+                    {dia.reportes_con_problemas} problemas
+                  </span>
+                </div>
+              </button>
             ))}
           </div>
         </div>
