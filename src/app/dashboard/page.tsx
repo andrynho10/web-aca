@@ -227,23 +227,29 @@ export default function DashboardPage() {
             value={kpis?.total_reportes_hoy || 0}
             subtitle={`${kpis?.total_reportes_semana || 0} esta semana`}
             icon={BarChart3}
+            clickable={true}
+            onClick={() => router.push('/dashboard/reportes')}
           />
           <KPICard
             title="Score Promedio"
             value={`${kpis?.score_promedio_global || 0}%`}
             subtitle="Últimos 30 días"
             icon={TrendingUp}
+            clickable={true}
+            onClick={() => router.push('/dashboard/heatmap')}
           />
           <KPICard
             title="Reportes con Problemas"
             value={kpis?.reportes_con_problemas || 0}
             subtitle={`${kpis?.porcentaje_con_problemas || 0}% del total`}
             icon={AlertTriangle}
+            clickable={true}
+            onClick={() => router.push('/dashboard/reportes?problemas=true')}
           />
           <KPICard
             title="Horómetros Pendientes"
             value={kpis?.horometros_pendientes || 0}
-            subtitle="Por cerrar - Click para ver"
+            subtitle="Por cerrar"
             icon={Clock}
             clickable={true}
             onClick={() => router.push('/dashboard/horometros#pendientes')}

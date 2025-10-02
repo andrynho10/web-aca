@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { 
   ArrowLeft, 
   Calendar, 
@@ -20,10 +20,12 @@ import { Activo, supabase } from '@/lib/supabase'
 
 export default function ReportesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [reportes, setReportes] = useState<any[]>([])
   const [activos, setActivos] = useState<Activo[]>([])
   const [usuarios, setUsuarios] = useState<any[]>([])
+  const [filtrosAplicados, setFiltrosAplicados] = useState(false)
   
   // Filtros
   const [fechaDesde, setFechaDesde] = useState('')
@@ -38,6 +40,22 @@ export default function ReportesPage() {
     checkAuthAndLoad()
   }, [])
 
+  useEffect(() => {
+    const problemasParam = searchParams.get('problemas')
+    if (problemasParam === 'true') {
+      setSoloProblemas(true)
+      setFiltrosAplicados(true) // <-- Marcar que hay filtros desde URL
+    }
+  }, [searchParams])
+
+    useEffect(() => {
+        if (filtrosAplicados && !loading) {
+        cargarReportes()
+        setFiltrosAplicados(false) // Reset para que no se ejecute múltiples veces
+        }
+    }, [filtrosAplicados, loading])
+
+
   async function checkAuthAndLoad() {
     const user = await getCurrentUser()
     
@@ -47,10 +65,14 @@ export default function ReportesPage() {
     }
 
     await Promise.all([
-      cargarReportes(),
       cargarActivos(),
       cargarUsuarios()
     ])
+    
+    // Solo cargar reportes inicialmente si NO hay filtros desde URL
+    if (!searchParams.get('problemas')) {
+      await cargarReportes()
+    }
     
     setLoading(false)
   }
