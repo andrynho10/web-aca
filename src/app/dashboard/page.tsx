@@ -198,6 +198,14 @@ export default function DashboardPage() {
                 <Timer className="w-4 h-4 mr-2" />
                 Horómetros
               </button>
+              {/* Botón Operadores */}
+              <button
+                onClick={() => router.push('/dashboard/operadores')}
+                className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Operadores
+              </button>
               {/* Botón Cerrar Sesión */}
               <button
                 onClick={() => router.push('/login')}
