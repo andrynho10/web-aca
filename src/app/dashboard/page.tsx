@@ -182,6 +182,23 @@ export default function DashboardPage() {
                 <Forklift className="w-4 h-4 mr-2" />
                 Gestión de Grúas
               </button>
+              {/* Botón Heatmap */}
+              <button
+                onClick={() => router.push('/dashboard/heatmap')}
+                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Heatmap
+              </button>
+              {/* Botón Horómetros */}
+              <button
+                onClick={() => router.push('/dashboard/horometros')}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                <Timer className="w-4 h-4 mr-2" />
+                Horómetros
+              </button>
+              {/* Botón Cerrar Sesión */}
               <button
                 onClick={() => router.push('/login')}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
