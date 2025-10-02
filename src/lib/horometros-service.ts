@@ -29,6 +29,23 @@ export interface EstadoHorometro {
   ultima_grua_operativa: boolean
 }
 
+export interface OperadorHorometroPendiente {
+  usuario_id: string
+  usuario_nombre: string
+  usuario_rut: string
+  total_pendientes: number
+  reportes_pendientes: Array<{
+    reporte_id: string
+    activo_nombre: string
+    activo_id: number
+    horometro_inicial: number
+    turno: number
+    timestamp_inicio: string
+    timestamp_completado: string
+    dias_pendiente: number
+  }>
+}
+
 export async function obtenerCorrelacionHorometroProblemas(dias: number = 90) {
   try {
     const { data, error } = await supabase.rpc('obtener_correlacion_horometro_problemas', { dias })
@@ -61,6 +78,18 @@ export async function obtenerEstadoHorometros() {
     return data as EstadoHorometro[]
   } catch (error) {
     console.error('Error obteniendo estado horómetros:', error)
+    return []
+  }
+}
+
+export async function obtenerOperadoresHorometrosPendientes() {
+  try {
+    const { data, error } = await supabase.rpc('obtener_operadores_horometros_pendientes')
+    if (error) {
+      throw error
+    }
+    return data as OperadorHorometroPendiente[]
+  } catch (error) {
     return []
   }
 }

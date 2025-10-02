@@ -9,7 +9,8 @@ import {
   AlertTriangle,
   Clock,
   Activity,
-  Gauge
+  Gauge,
+  Users
 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { 
@@ -21,6 +22,7 @@ import {
   EstadoHorometro
 } from '@/lib/horometros-service'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter } from 'recharts'
+import { obtenerOperadoresHorometrosPendientes, OperadorHorometroPendiente } from '@/lib/horometros-service'
 
 export default function HorometrosPage() {
   const router = useRouter()
@@ -29,6 +31,7 @@ export default function HorometrosPage() {
   const [eficiencia, setEficiencia] = useState<EficienciaHorometro[]>([])
   const [estado, setEstado] = useState<EstadoHorometro[]>([])
   const [dias, setDias] = useState(90)
+  const [operadoresPendientes, setOperadoresPendientes] = useState<OperadorHorometroPendiente[]>([])
 
   useEffect(() => {
     checkAuthAndLoad()
@@ -48,17 +51,20 @@ export default function HorometrosPage() {
 
   async function cargarDatos() {
     setLoading(true)
-    const [correlacionData, eficienciaData, estadoData] = await Promise.all([
-      obtenerCorrelacionHorometroProblemas(dias),
-      obtenerEficienciaHorometro(dias),
-      obtenerEstadoHorometros()
+    
+    const [correlacionData, eficienciaData, estadoData, pendientesData] = await Promise.all([
+        obtenerCorrelacionHorometroProblemas(dias),
+        obtenerEficienciaHorometro(dias),
+        obtenerEstadoHorometros(),
+        obtenerOperadoresHorometrosPendientes()
     ])
 
     setCorrelacion(correlacionData)
     setEficiencia(eficienciaData)
     setEstado(estadoData)
+    setOperadoresPendientes(pendientesData)   
     setLoading(false)
-  }
+}
 
   if (loading) {
     return (
@@ -176,6 +182,94 @@ export default function HorometrosPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Operadores con Horómetros Pendientes */}
+        <div id="pendientes" className="bg-white rounded-lg shadow scroll-mt-8">
+        <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-orange-600" />
+                <h2 className="text-lg font-semibold text-gray-900">
+                Operadores con Horómetros Pendientes
+                </h2>
+            </div>
+            <span className="text-2xl font-bold text-orange-600">
+                {operadoresPendientes.reduce((acc, op) => acc + op.total_pendientes, 0)}
+            </span>
+            </div>
+        </div>
+        
+        <div className="p-6">
+            {operadoresPendientes.length === 0 ? (
+                <div className="text-center py-8 text-green-600">
+                    <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p className="font-medium">¡Excelente! No hay horómetros pendientes</p>
+                </div>
+            ) : (
+            <div className="space-y-4">
+                {operadoresPendientes.map((operador) => (
+                <div 
+                    key={operador.usuario_id} 
+                    className="border border-orange-200 rounded-lg bg-orange-50 p-4"
+                >
+                    <div className="flex items-center justify-between mb-3">
+                    <div>
+                        <h3 className="font-semibold text-gray-900">
+                        {operador.usuario_nombre}
+                        </h3>
+                        <p className="text-sm text-gray-600">RUT: {operador.usuario_rut}</p>
+                    </div>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-600 text-white">
+                        {operador.total_pendientes} pendiente{operador.total_pendientes !== 1 ? 's' : ''}
+                    </span>
+                    </div>
+
+                    <div className="space-y-2">
+                    {operador.reportes_pendientes.map((reporte, idx) => {
+                        const diasPendiente = Math.floor(reporte.dias_pendiente)
+                        const esUrgente = diasPendiente > 2
+                        
+                        return (
+                        <div 
+                            key={reporte.reporte_id}
+                            className={`flex items-center justify-between p-3 rounded-md ${
+                            esUrgente ? 'bg-red-100 border border-red-300' : 'bg-white border border-gray-200'
+                            }`}
+                        >
+                            <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900">
+                                {reporte.activo_nombre}
+                                </span>
+                                <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                                Turno {reporte.turno}
+                                </span>
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                                Inicio: {new Date(reporte.timestamp_inicio).toLocaleString('es-CL')}
+                                {reporte.horometro_inicial && (
+                                <span className="ml-3">
+                                    Horómetro inicial: <span className="font-medium">{reporte.horometro_inicial}h</span>
+                                </span>
+                                )}
+                            </div>
+                            </div>
+                            <div className="text-right ml-4">
+                            <div className={`text-sm font-semibold ${esUrgente ? 'text-red-700' : 'text-orange-700'}`}>
+                                {diasPendiente} día{diasPendiente !== 1 ? 's' : ''}
+                            </div>
+                            <div className="text-xs text-gray-500">pendiente</div>
+                            </div>
+                        </div>
+                        )
+                    })}
+                    </div>
+                </div>
+                ))}
+            </div>
+            )}
+        </div>
         </div>
 
         {/* Correlación: Horas Uso vs Problemas */}

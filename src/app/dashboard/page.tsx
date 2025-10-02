@@ -243,8 +243,10 @@ export default function DashboardPage() {
           <KPICard
             title="Horómetros Pendientes"
             value={kpis?.horometros_pendientes || 0}
-            subtitle="Por cerrar"
+            subtitle="Por cerrar - Click para ver"
             icon={Clock}
+            clickable={true}
+            onClick={() => router.push('/dashboard/horometros#pendientes')}
           />
         </div>
 
