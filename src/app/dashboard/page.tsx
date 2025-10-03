@@ -11,7 +11,8 @@ import {
   TrendingUp,
   Users,
   Timer,
-  Calendar
+  Calendar,
+  RefreshCw
 } from 'lucide-react'
 import { KPICard } from '@/components/KPICard'
 import { getCurrentUser } from '@/lib/auth'
@@ -112,16 +113,86 @@ function ReportesRecientesList() {
 export default function DashboardPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [actualizando, setActualizando] = useState(false)
   const [usuario, setUsuario] = useState<any>(null)
   const [kpis, setKpis] = useState<KPIsDashboard | null>(null)
   const [tendencia, setTendencia] = useState<any[]>([])
   const [turnos, setTurnos] = useState<any>(null)
   const [topGruas, setTopGruas] = useState<any[]>([])
   const [topProblemas, setTopProblemas] = useState<any[]>([])
+  const [ultimaActualizacion, setUltimaActualizacion] = useState<Date>(new Date())
 
   useEffect(() => {
     checkAuth()
   }, [])
+
+  // ========================================
+  // REALTIME SUBSCRIPTION (Actualización instantánea)
+  // ========================================
+  useEffect(() => {
+    if (!usuario) return
+
+    console.log('🔌 Conectando a Realtime...')
+
+    const channel = supabase
+      .channel('dashboard-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'reportes_inspeccion'
+        },
+        (payload) => {
+          console.log('🔔 Nuevo reporte detectado:', payload.new)
+          cargarDatos(true) // Actualización silenciosa
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reportes_inspeccion'
+        },
+        (payload) => {
+          console.log('📝 Reporte actualizado:', payload.new)
+          cargarDatos(true)
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Conectado a Realtime')
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Error en canal Realtime')
+        }
+      })
+
+    return () => {
+      console.log('🔌 Desconectando Realtime...')
+      supabase.removeChannel(channel)
+    }
+  }, [usuario])
+
+  // ========================================
+  // POLLING DE RESPALDO (cada 2 minutos)
+  // ========================================
+  useEffect(() => {
+    if (!usuario) return
+
+    console.log('⏱️ Iniciando polling de respaldo (cada 2 minutos)')
+
+    const intervalo = setInterval(() => {
+      console.log('🔄 Polling: Actualizando datos...')
+      cargarDatos(true)
+    }, 120000) // 2 minutos
+
+    return () => {
+      console.log('⏱️ Deteniendo polling')
+      clearInterval(intervalo)
+    }
+  }, [usuario])
 
   async function checkAuth() {
     const user = await getCurrentUser()
@@ -136,20 +207,37 @@ export default function DashboardPage() {
     setLoading(false)
   }
 
-  async function cargarDatos() {
-    const [kpisData, tendenciaData, turnosData, gruasData, problemasData] = await Promise.all([
-      obtenerKPIs(),
-      obtenerTendenciaDiaria(30),
-      obtenerAnalisisTurnos(30),
-      obtenerTopGruasProblematicas(5, 30),
-      obtenerTopProblemas(30)
-    ])
+  async function cargarDatos(silencioso: boolean = false) {
+    if (!silencioso) {
+      setLoading(true)
+    } else {
+      setActualizando(true)
+    }
 
-    setKpis(kpisData)
-    setTendencia(tendenciaData)
-    setTurnos(turnosData)
-    setTopGruas(gruasData)
-    setTopProblemas(problemasData)
+    try {
+      const [kpisData, tendenciaData, turnosData, gruasData, problemasData] = await Promise.all([
+        obtenerKPIs(),
+        obtenerTendenciaDiaria(30),
+        obtenerAnalisisTurnos(30),
+        obtenerTopGruasProblematicas(5, 30),
+        obtenerTopProblemas(30)
+      ])
+
+      setKpis(kpisData)
+      setTendencia(tendenciaData)
+      setTurnos(turnosData)
+      setTopGruas(gruasData)
+      setTopProblemas(problemasData)
+      setUltimaActualizacion(new Date())
+    } catch (error) {
+      console.error('Error cargando datos:', error)
+    } finally {
+      if (!silencioso) {
+        setLoading(false)
+      } else {
+        setActualizando(false)
+      }
+    }
   }
 
   if (loading) {
@@ -172,7 +260,23 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Panel de Supervisor</h1>
               <p className="text-sm text-gray-600">TULSA S.A. - {usuario?.nombre_completo}</p>
+              
+              {/* Indicador de última actualización */}
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-gray-400">
+                  Última actualización: {ultimaActualizacion.toLocaleTimeString('es-CL')}
+                </p>
+                <button
+                  onClick={() => cargarDatos()}
+                  disabled={actualizando}
+                  className="text-xs text-blue-600 hover:text-blue-700 disabled:text-gray-400 flex items-center gap-1"
+                >
+                  <RefreshCw className={`w-3 h-3 ${actualizando ? 'animate-spin' : ''}`} />
+                  {actualizando ? 'Actualizando...' : 'Actualizar'}
+                </button>
+              </div>
             </div>
+            
             <div className="flex items-center space-x-3">
               {/* Botón Gestión de Grúas */}
               <button
@@ -287,21 +391,25 @@ export default function DashboardPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Grúas con Más Problemas</h2>
             <div className="space-y-3">
-              {topGruas.map((grua, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div className="flex items-center">
-                    <Forklift className="w-5 h-5 text-gray-400 mr-3" />
-                    <div>
-                      <p className="font-medium text-gray-900">{grua.activo_nombre}</p>
-                      <p className="text-sm text-gray-500">{grua.total_reportes} reportes</p>
+              {topGruas.length === 0 ? (
+                <p className="text-center py-8 text-gray-500">No hay datos suficientes</p>
+              ) : (
+                topGruas.map((grua, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <div className="flex items-center">
+                      <Forklift className="w-5 h-5 text-gray-400 mr-3" />
+                      <div>
+                        <p className="font-medium text-gray-900">{grua.activo_nombre}</p>
+                        <p className="text-sm text-gray-500">{grua.total_reportes} reportes</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-red-600">{grua.reportes_con_problemas} Problemas</p>
+                      <p className="text-sm text-gray-500">{grua.porcentaje_problemas}%</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-red-600">{grua.reportes_con_problemas} Reportes con Problemas</p>
-                    <p className="text-sm text-gray-500">{grua.porcentaje_problemas}%</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -324,7 +432,7 @@ export default function DashboardPage() {
                           <p className="font-semibold">{data.score_promedio}%</p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Reportes con Problemas</p>
+                          <p className="text-gray-500">Problemas</p>
                           <p className="font-semibold text-red-600">{data.con_problemas}</p>
                         </div>
                         <div>
@@ -346,33 +454,38 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-gray-900">Top 10 Problemas Más Frecuentes</h2>
             <button
               onClick={() => router.push('/dashboard/problemas-criticos')}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               Ver análisis completo →
             </button>
           </div>
           <div className="space-y-2">
-            {topProblemas.map((problema, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900">{problema.texto_pregunta}</p>
-                </div>
-                <div className="flex items-center gap-4 ml-4">
-                  <span className="text-sm text-gray-500">{problema.total_fallo} fallos</span>
-                  <div className="w-24 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-red-600 h-2 rounded-full" 
-                      style={{ width: `${problema.porcentaje_fallo}%` }}
-                    ></div>
+            {topProblemas.length === 0 ? (
+              <p className="text-center py-8 text-gray-500">No hay problemas detectados</p>
+            ) : (
+              topProblemas.map((problema, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded">
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">{problema.texto_pregunta}</p>
                   </div>
-                  <span className="text-sm font-semibold text-red-600 w-12 text-right">
-                    {problema.porcentaje_fallo}%
-                  </span>
+                  <div className="flex items-center gap-4 ml-4">
+                    <span className="text-sm text-gray-500">{problema.total_fallo} fallos</span>
+                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-red-600 h-2 rounded-full" 
+                        style={{ width: `${problema.porcentaje_fallo}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm font-semibold text-red-600 w-12 text-right">
+                      {problema.porcentaje_fallo}%
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
+
         {/* Lista de Reportes Recientes */}
         <div className="bg-white rounded-lg shadow p-6 mt-8">
           <div className="flex items-center justify-between mb-4">
