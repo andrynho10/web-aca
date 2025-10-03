@@ -63,13 +63,9 @@ export async function obtenerHeatmapGruas(dias: number = 30) {
   }
 }
 
-export async function obtenerTopProblemas() {
+export async function obtenerTopProblemas(dias: number = 30) {
   try {
-    const { data, error } = await supabase
-      .from('mv_top_problemas')
-      .select('*')
-      .order('porcentaje_fallo', { ascending: false })
-      .limit(10)
+    const { data, error } = await supabase.rpc('obtener_top_problemas_dinamico', { dias })
     
     if (error) throw error
     return data

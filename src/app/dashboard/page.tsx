@@ -142,7 +142,7 @@ export default function DashboardPage() {
       obtenerTendenciaDiaria(30),
       obtenerAnalisisTurnos(30),
       obtenerTopGruasProblematicas(5, 30),
-      obtenerTopProblemas()
+      obtenerTopProblemas(30)
     ])
 
     setKpis(kpisData)
