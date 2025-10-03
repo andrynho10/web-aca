@@ -206,6 +206,14 @@ export default function DashboardPage() {
                 <Users className="w-4 h-4 mr-2" />
                 Operadores
               </button>
+              {/* Botón Problemas Críticos */}
+              <button
+                onClick={() => router.push('/dashboard/problemas-criticos')}
+                className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Problemas Críticos
+              </button>
               {/* Botón Cerrar Sesión */}
               <button
                 onClick={() => router.push('/login')}
@@ -334,7 +342,15 @@ export default function DashboardPage() {
 
         {/* Top Problemas */}
         <div className="bg-white rounded-lg shadow p-6 mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Top 10 Problemas Más Frecuentes</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Top 10 Problemas Más Frecuentes</h2>
+            <button
+              onClick={() => router.push('/dashboard/problemas-criticos')}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+            >
+              Ver análisis completo →
+            </button>
+          </div>
           <div className="space-y-2">
             {topProblemas.map((problema, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded">
