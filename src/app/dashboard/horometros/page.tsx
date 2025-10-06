@@ -33,9 +33,18 @@ export default function HorometrosPage() {
   const [dias, setDias] = useState(90)
   const [operadoresPendientes, setOperadoresPendientes] = useState<OperadorHorometroPendiente[]>([])
 
+  // Verificar autenticación al montar
   useEffect(() => {
     checkAuthAndLoad()
   }, [])
+
+  // Recargar datos cuando cambia el período
+  useEffect(() => {
+    // Solo recargar si ya pasó la carga inicial
+    if (!loading) {
+      cargarDatos()
+    }
+  }, [dias])
 
   async function checkAuthAndLoad() {
     const user = await getCurrentUser()
@@ -107,10 +116,7 @@ export default function HorometrosPage() {
               <label className="text-sm font-medium text-gray-700">Período:</label>
               <select
                 value={dias}
-                onChange={(e) => {
-                  setDias(parseInt(e.target.value))
-                  setTimeout(() => cargarDatos(), 100)
-                }}
+                onChange={(e) => setDias(parseInt(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="30">Últimos 30 días</option>
@@ -164,7 +170,7 @@ export default function HorometrosPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className={`font-medium ${alerta ? 'text-yellow-700' : 'text-gray-600'}`}>
-                          {item.dias_sin_actualizacion}
+                          {item.dias_sin_actualizacion ?? '-'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
