@@ -21,7 +21,7 @@ import {
   EficienciaHorometro,
   EstadoHorometro
 } from '@/lib/horometros-service'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, Cell } from 'recharts'
 import { obtenerOperadoresHorometrosPendientes, OperadorHorometroPendiente } from '@/lib/horometros-service'
 
 export default function HorometrosPage() {
@@ -295,31 +295,111 @@ export default function HorometrosPage() {
             </div>
           ) : (
             <>
-              {/* Gráfico con scroll horizontal cuando hay muchas grúas */}
+              {/* Scatter Plot */}
               <div className="mt-6 overflow-x-auto">
-                <div style={{ minWidth: `${Math.max(600, correlacion.length * 100)}px` }}>
-                  <ResponsiveContainer width="100%" height={450}>
-                    <BarChart data={dataCorrelacion}>
+                <div style={{ minWidth: '600px' }}>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <ScatterChart
+                      margin={{ top: 20, right: 20, bottom: 60, left: 20 }}
+                    >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
-                        dataKey="nombre" 
-                        angle={-45}
-                        textAnchor="end"
-                        height={120}
-                        interval={0}
+                        type="number" 
+                        dataKey="horas" 
+                        name="Horas de Uso"
+                        label={{ 
+                          value: 'Horas de Uso Total', 
+                          position: 'insideBottom', 
+                          offset: -10,
+                          style: { fontSize: 14, fontWeight: 600 }
+                        }}
                       />
-                      <YAxis yAxisId="left" />
-                      <YAxis yAxisId="right" orientation="right" />
-                      <Tooltip />
-                      <Legend />
-                      <Bar yAxisId="left" dataKey="horas" fill="#3b82f6" name="Horas Uso" />
-                      <Bar yAxisId="right" dataKey="problemas" fill="#ef4444" name="% Problemas" />
-                    </BarChart>
+                      <YAxis 
+                        type="number" 
+                        dataKey="problemas" 
+                        name="% Problemas"
+                        label={{ 
+                          value: '% Problemas', 
+                          angle: -90, 
+                          position: 'insideLeft',
+                          style: { fontSize: 14, fontWeight: 600 }
+                        }}
+                      />
+                      <Tooltip 
+                        cursor={{ strokeDasharray: '3 3' }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload
+                            return (
+                              <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+                                <p className="font-semibold text-gray-900">{data.nombre}</p>
+                                <p className="text-sm text-gray-600">
+                                  Horas de uso: <span className="font-medium text-blue-600">{data.horas}h</span>
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  % Problemas: <span className="font-medium text-red-600">{data.problemas}%</span>
+                                </p>
+                              </div>
+                            )
+                          }
+                          return null
+                        }}
+                      />
+                      <Scatter 
+                        name="Grúas" 
+                        data={dataCorrelacion} 
+                        fill="#8884d8"
+                      >
+                        {dataCorrelacion.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={
+                              entry.problemas > 25 ? '#ef4444' :  // Rojo: >25% problemas
+                              entry.problemas > 15 ? '#f59e0b' :  // Naranja: >15% problemas
+                              '#10b981'  // Verde: ≤15% problemas
+                            }
+                          />
+                        ))}
+                      </Scatter>
+                    </ScatterChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              {/* 🆕 TABLA COMPLETA en lugar de 3 tarjetas */}
+              {/* Leyenda de colores */}
+              <div className="mt-4 flex items-center justify-center gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-gray-600">Bajo (&lt;15% problemas)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <span className="text-gray-600">Medio (15-25%)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span className="text-gray-600">Alto (&gt;25%)</span>
+                </div>
+              </div>
+
+              {/* Interpretación de la correlación */}
+              <div className="mt-6 bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Activity className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-purple-900 mb-1">
+                      Interpretación de la Correlación
+                    </h3>
+                    <p className="text-sm text-purple-700">
+                      Si los puntos forman una línea diagonal ascendente, existe correlación positiva 
+                      (más horas de uso = más problemas). Si están dispersos sin patrón, la correlación es baja 
+                      y los problemas pueden deberse a otros factores como mantenimiento o condiciones de operación.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabla detallada debajo */}
               <div className="mt-6 overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -333,34 +413,36 @@ export default function HorometrosPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {correlacion.map((item) => (
-                      <tr key={item.activo_id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {item.activo_nombre}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-blue-600">
-                          {item.total_horas_uso}h
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
-                          {item.total_inspecciones}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-red-600">
-                          {item.inspecciones_con_problemas}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                          <span className={`font-semibold ${
-                            item.porcentaje_problemas < 10 ? 'text-green-600' :
-                            item.porcentaje_problemas < 25 ? 'text-yellow-600' :
-                            'text-red-600'
-                          }`}>
-                            {item.porcentaje_problemas}%
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
-                          {item.promedio_horas_por_inspeccion}h
-                        </td>
-                      </tr>
-                    ))}
+                    {correlacion
+                      .sort((a, b) => a.activo_nombre.localeCompare(b.activo_nombre))
+                      .map((item) => (
+                        <tr key={item.activo_id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {item.activo_nombre}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-blue-600">
+                            {item.total_horas_uso}h
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                            {item.total_inspecciones}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-red-600">
+                            {item.inspecciones_con_problemas}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                            <span className={`font-semibold ${
+                              item.porcentaje_problemas < 15 ? 'text-green-600' :
+                              item.porcentaje_problemas < 25 ? 'text-yellow-600' :
+                              'text-red-600'
+                            }`}>
+                              {item.porcentaje_problemas}%
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                            {item.promedio_horas_por_inspeccion}h
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
