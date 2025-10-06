@@ -404,7 +404,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-red-600">{grua.reportes_con_problemas} Problemas</p>
+                      <p className="font-semibold text-red-600">{grua.reportes_con_problemas} Reportes con Problemas</p>
                       <p className="text-sm text-gray-500">{grua.porcentaje_problemas}%</p>
                     </div>
                   </div>
