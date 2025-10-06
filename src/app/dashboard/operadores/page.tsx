@@ -29,9 +29,17 @@ export default function OperadoresPage() {
   const [dias, setDias] = useState(90)
   const [ordenamiento, setOrdenamiento] = useState<'inspecciones' | 'score' | 'problemas'>('inspecciones')
 
+  // Verificar autenticación al montar
   useEffect(() => {
     checkAuthAndLoad()
   }, [])
+
+  // Recargar datos cuando cambia el período
+  useEffect(() => {
+    if (!loading) {
+      cargarDatos()
+    }
+  }, [dias])
 
   async function checkAuthAndLoad() {
     const user = await getCurrentUser()
@@ -104,10 +112,7 @@ export default function OperadoresPage() {
             <div className="flex items-center gap-3">
               <select
                 value={dias}
-                onChange={(e) => {
-                  setDias(parseInt(e.target.value))
-                  setTimeout(() => cargarDatos(), 100)
-                }}
+                onChange={(e) => setDias(parseInt(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
               >
                 <option value="30">Últimos 30 días</option>

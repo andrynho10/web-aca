@@ -13,9 +13,18 @@ export default function HeatmapPage() {
   const [heatmapData, setHeatmapData] = useState<any[]>([])
   const [dias, setDias] = useState(30)
 
+  // Verificar autenticación al montar
   useEffect(() => {
     checkAuthAndLoad()
   }, [])
+
+  // Recargar datos cuando cambia el período
+  useEffect(() => {
+    if (!loading) {
+      cargarHeatmap()
+    }
+  }, [dias])
+
 
   async function checkAuthAndLoad() {
     const user = await getCurrentUser()
@@ -77,10 +86,7 @@ export default function HeatmapPage() {
               <label className="text-sm font-medium text-gray-700">Período:</label>
               <select
                 value={dias}
-                onChange={(e) => {
-                  setDias(parseInt(e.target.value))
-                  setTimeout(() => cargarHeatmap(), 100)
-                }}
+                onChange={(e) => setDias(parseInt(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="7">Últimos 7 días</option>

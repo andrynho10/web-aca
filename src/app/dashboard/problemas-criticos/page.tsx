@@ -37,9 +37,17 @@ export default function ProblemasCriticosPage() {
   const [filtroEstado, setFiltroEstado] = useState<'TODOS' | 'CRITICA' | 'ALTA' | 'MEDIA'>('TODOS')
   const [filtroTendencia, setFiltroTendencia] = useState<'TODOS' | 'EMPEORANDO' | 'MEJORANDO' | 'ESTABLE'>('TODOS')
 
+  // Verificar autenticación al montar
   useEffect(() => {
     checkAuthAndLoad()
   }, [])
+
+  // Recargar datos cuando cambia el período
+  useEffect(() => {
+    if (!loading) {
+      cargarDatos()
+    }
+  }, [dias])
 
   async function checkAuthAndLoad() {
     const user = await getCurrentUser()
@@ -127,10 +135,7 @@ export default function ProblemasCriticosPage() {
               <label className="text-sm font-medium text-gray-700">Período:</label>
               <select
                 value={dias}
-                onChange={(e) => {
-                  setDias(parseInt(e.target.value))
-                  setTimeout(() => cargarDatos(), 100)
-                }}
+                onChange={(e) => setDias(parseInt(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="7">Últimos 7 días</option>
