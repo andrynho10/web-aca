@@ -262,7 +262,7 @@ export default function OperadoresPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Centro Costo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inspecciones</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">% Problemas</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">% Reportes con Problemas</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Última Inspección</th>
                 </tr>
               </thead>
