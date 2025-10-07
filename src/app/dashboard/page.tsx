@@ -27,9 +27,18 @@ import { KPIsDashboard } from '@/lib/supabase'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 import { supabase } from '@/lib/supabase'
 
+type ReporteReciente = {
+  id: string
+  timestamp_completado: string
+  tiene_problemas: boolean
+  score_cumplimiento: number
+  activo_nombre: string
+  operador_nombre: string
+}
+
 function ReportesRecientesList() {
   const router = useRouter()
-  const [reportesRecientes, setReportesRecientes] = useState<any[]>([])
+  const [reportesRecientes, setReportesRecientes] = useState<ReporteReciente[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,21 +47,27 @@ function ReportesRecientesList() {
 
   async function cargarReportesRecientes() {
     try {
+      const { error: refreshError } = await supabase.rpc('refresh_mv_reportes_recientes')
+
+      if (refreshError && refreshError.code !== '55P03' && refreshError.code !== '55P02') {
+        throw refreshError
+      }
+
       const { data, error } = await supabase
-        .from('reportes_inspeccion')
+        .from('mv_reportes_recientes')
         .select(`
           id,
           timestamp_completado,
           tiene_problemas,
           score_cumplimiento,
-          activo:activos!inner(nombre),
-          usuario:usuarios!inner(nombre_completo)
+          activo_nombre,
+          operador_nombre
         `)
         .order('timestamp_completado', { ascending: false })
         .limit(10)
 
       if (error) throw error
-      setReportesRecientes(data || [])
+      setReportesRecientes((data ?? []) as ReporteReciente[])
     } catch (error) {
       console.error('Error cargando reportes recientes:', error)
     } finally {
@@ -91,8 +106,8 @@ function ReportesRecientesList() {
                 <CheckCircle className="w-4 h-4 text-green-500" />
               )}
               <div>
-                <p className="text-sm font-medium text-gray-900">{reporte.activo?.nombre}</p>
-                <p className="text-xs text-gray-500">{reporte.usuario?.nombre_completo}</p>
+                <p className="text-sm font-medium text-gray-900">{reporte.activo_nombre || 'Activo desconocido'}</p>
+                <p className="text-xs text-gray-500">{reporte.operador_nombre || 'Operador desconocido'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
