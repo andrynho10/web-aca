@@ -18,6 +18,15 @@ import { obtenerReportesConFiltros } from '@/lib/reportes-service'
 import { obtenerActivos } from '@/lib/activos-service'
 import { Activo, supabase } from '@/lib/supabase'
 
+type ReportesFiltroOverrides = {
+  fechaDesde?: string
+  fechaHasta?: string
+  activoSeleccionado?: number
+  operadorSeleccionado?: string
+  turnoSeleccionado?: number
+  soloProblemas?: boolean
+}
+
 export default function ReportesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -77,28 +86,45 @@ export default function ReportesPage() {
     setLoading(false)
   }
 
-  async function cargarReportes() {
+  async function cargarReportes(overrides: ReportesFiltroOverrides = {}) {
+    const fechaDesdeValue = Object.prototype.hasOwnProperty.call(overrides, 'fechaDesde')
+      ? overrides.fechaDesde
+      : fechaDesde
+    const fechaHastaValue = Object.prototype.hasOwnProperty.call(overrides, 'fechaHasta')
+      ? overrides.fechaHasta
+      : fechaHasta
+    const activoValue = Object.prototype.hasOwnProperty.call(overrides, 'activoSeleccionado')
+      ? overrides.activoSeleccionado
+      : activoSeleccionado
+    const operadorValue = Object.prototype.hasOwnProperty.call(overrides, 'operadorSeleccionado')
+      ? overrides.operadorSeleccionado
+      : operadorSeleccionado
+    const turnoValue = Object.prototype.hasOwnProperty.call(overrides, 'turnoSeleccionado')
+      ? overrides.turnoSeleccionado
+      : turnoSeleccionado
+    const soloProblemasValue = Object.prototype.hasOwnProperty.call(overrides, 'soloProblemas')
+      ? overrides.soloProblemas ?? false
+      : soloProblemas
+
     let data = await obtenerReportesConFiltros(
-      fechaDesde || undefined,
-      fechaHasta || undefined,
-      activoSeleccionado,
-      soloProblemas
+      fechaDesdeValue || undefined,
+      fechaHastaValue || undefined,
+      activoValue,
+      soloProblemasValue
     )
-    
-    // Filtrar por operador si está seleccionado
-    if (operadorSeleccionado) {
-      data = data.filter(r => r.usuario_id === operadorSeleccionado)
+
+    if (operadorValue) {
+      data = data.filter(r => r.usuario_id === operadorValue)
     }
-    
-    // Filtrar por turno localmente si está seleccionado
-    if (turnoSeleccionado) {
-      data = data.filter(r => r.turno === turnoSeleccionado)
+
+    if (turnoValue) {
+      data = data.filter(r => r.turno === turnoValue)
     }
-    
+
     setReportes(data)
   }
 
-  async function cargarActivos() {
+async function cargarActivos() {
     const data = await obtenerActivos()
     setActivos(data)
   }
@@ -118,9 +144,9 @@ export default function ReportesPage() {
     }
   }
 
-  async function aplicarFiltros() {
+  async function aplicarFiltros(overrides?: ReportesFiltroOverrides) {
     setLoading(true)
-    await cargarReportes()
+    await cargarReportes(overrides)
     setLoading(false)
   }
 
@@ -132,6 +158,30 @@ export default function ReportesPage() {
     setTurnoSeleccionado(undefined)
     setSoloProblemas(false)
     setBusqueda('')
+    setFiltrosAplicados(false)
+
+    if (searchParams.has('problemas')) {
+      const params = new URLSearchParams(Array.from(searchParams.entries()))
+      params.delete('problemas')
+
+      const queryString = params.toString()
+      router.replace(
+        queryString ? `/dashboard/reportes?${queryString}` : '/dashboard/reportes',
+        { scroll: false }
+      )
+    }
+  }
+
+  function handleLimpiarFiltros() {
+    limpiarFiltros()
+    void aplicarFiltros({
+      fechaDesde: undefined,
+      fechaHasta: undefined,
+      activoSeleccionado: undefined,
+      operadorSeleccionado: undefined,
+      turnoSeleccionado: undefined,
+      soloProblemas: false
+    })
   }
 
   // Filtrar por búsqueda local
@@ -312,10 +362,7 @@ export default function ReportesPage() {
               Aplicar Filtros
             </button>
             <button
-              onClick={() => {
-                limpiarFiltros()
-                aplicarFiltros()
-              }}
+              onClick={handleLimpiarFiltros}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-medium"
             >
               Limpiar
