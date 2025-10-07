@@ -447,7 +447,7 @@ export default function DashboardPage() {
                           <p className="font-semibold">{data.score_promedio}%</p>
                         </div>
                         <div>
-                          <p className="text-gray-500">Problemas</p>
+                          <p className="text-gray-500">Reportes con Problemas</p>
                           <p className="font-semibold text-red-600">{data.con_problemas}</p>
                         </div>
                         <div>
