@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   BarChart3, 
@@ -26,6 +26,7 @@ import {
 import { KPIsDashboard } from '@/lib/supabase'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 import { supabase } from '@/lib/supabase'
+import { construirResumenUsoActivos, obtenerAgregadosDiariosActivos, ResumenUsoActivo } from '@/lib/activos-service'
 
 type ReporteReciente = {
   id: string
@@ -136,18 +137,58 @@ export default function DashboardPage() {
   const [topGruas, setTopGruas] = useState<any[]>([])
   const [topProblemas, setTopProblemas] = useState<any[]>([])
   const [ultimaActualizacion, setUltimaActualizacion] = useState<Date>(new Date())
+  const [resumenUsoActivos, setResumenUsoActivos] = useState<ResumenUsoActivo[]>([])
+
+  const tendenciaDataset = useMemo(() => {
+    return tendencia.map((item) => {
+      const totalInspecciones = Number((item as any)?.total_inspecciones ?? 0) || 0
+      const rawProblemas =
+        Number(
+          (item as any)?.inspecciones_con_problemas ??
+          (item as any)?.reportes_con_problemas ??
+          (item as any)?.total_con_problemas ??
+          0
+        ) || 0
+      const porcentajeProblemas =
+        totalInspecciones > 0
+          ? Number(((rawProblemas / totalInspecciones) * 100).toFixed(1))
+          : 0
+
+      return {
+        ...item,
+        total_inspecciones: totalInspecciones,
+        score_promedio: Number((item as any)?.score_promedio ?? 0) || 0,
+        porcentaje_problemas: porcentajeProblemas,
+        inspecciones_con_problemas: rawProblemas
+      }
+    })
+  }, [tendencia])
+
+  const topUso = useMemo(() => {
+    return [...resumenUsoActivos]
+      .filter((item) => item.horasUso30 > 0 || item.horasUso7 > 0)
+      .sort((a, b) => b.horasUso30 - a.horasUso30)
+      .slice(0, 5)
+  }, [resumenUsoActivos])
+
+  const topHorometrosPendientes = useMemo(() => {
+    return [...resumenUsoActivos]
+      .filter((item) => item.horometrosPendientes > 0)
+      .sort((a, b) => b.horometrosPendientes - a.horometrosPendientes)
+      .slice(0, 5)
+  }, [resumenUsoActivos])
 
   useEffect(() => {
     checkAuth()
   }, [])
 
   // ========================================
-  // REALTIME SUBSCRIPTION (Actualización instantánea)
+  // REALTIME SUBSCRIPTION (Actualización Instantánea)
   // ========================================
   useEffect(() => {
     if (!usuario) return
 
-    console.log('🔌 Conectando a Realtime...')
+    console.log('Conectando a Realtime...')
 
     const channel = supabase
       .channel('dashboard-updates')
@@ -159,7 +200,7 @@ export default function DashboardPage() {
           table: 'reportes_inspeccion'
         },
         (payload) => {
-          console.log('🔔 Nuevo reporte detectado:', payload.new)
+          console.log('Nuevo reporte detectado:', payload.new)
           cargarDatos(true) // Actualización silenciosa
         }
       )
@@ -171,21 +212,21 @@ export default function DashboardPage() {
           table: 'reportes_inspeccion'
         },
         (payload) => {
-          console.log('📝 Reporte actualizado:', payload.new)
+          console.log('Reporte actualizado:', payload.new)
           cargarDatos(true)
         }
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Conectado a Realtime')
+          console.log('Conectado a Realtime')
         }
         if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Error en canal Realtime')
+          console.error('Error en canal Realtime')
         }
       })
 
     return () => {
-      console.log('🔌 Desconectando Realtime...')
+      console.log('Desconectando Realtime...')
       supabase.removeChannel(channel)
     }
   }, [usuario])
@@ -196,15 +237,15 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!usuario) return
 
-    console.log('⏱️ Iniciando polling de respaldo (cada 2 minutos)')
+    console.log('Iniciando polling de respaldo (cada 2 minutos)')
 
     const intervalo = setInterval(() => {
-      console.log('🔄 Polling: Actualizando datos...')
+      console.log('Polling: Actualizando datos...')
       cargarDatos(true)
     }, 120000) // 2 minutos
 
     return () => {
-      console.log('⏱️ Deteniendo polling')
+      console.log('â±ï¸ Deteniendo polling')
       clearInterval(intervalo)
     }
   }, [usuario])
@@ -230,12 +271,20 @@ export default function DashboardPage() {
     }
 
     try {
-      const [kpisData, tendenciaData, turnosData, gruasData, problemasData] = await Promise.all([
+      const [
+        kpisData,
+        tendenciaData,
+        turnosData,
+        gruasData,
+        problemasData,
+        agregadosData
+      ] = await Promise.all([
         obtenerKPIs(),
         obtenerTendenciaDiaria(30),
         obtenerAnalisisTurnos(30),
         obtenerTopGruasProblematicas(5, 30),
-        obtenerTopProblemas(30)
+        obtenerTopProblemas(30),
+        obtenerAgregadosDiariosActivos(30)
       ])
 
       setKpis(kpisData)
@@ -243,6 +292,7 @@ export default function DashboardPage() {
       setTurnos(turnosData)
       setTopGruas(gruasData)
       setTopProblemas(problemasData)
+      setResumenUsoActivos(construirResumenUsoActivos(agregadosData))
       setUltimaActualizacion(new Date())
     } catch (error) {
       console.error('Error cargando datos:', error)
@@ -276,10 +326,10 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold text-gray-900">Panel de Supervisor</h1>
               <p className="text-sm text-gray-600">TULSA S.A. - {usuario?.nombre_completo}</p>
               
-              {/* Indicador de última actualización */}
+              {/* Indicador de Última Actualización */}
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-xs text-gray-400">
-                  Última actualización: {ultimaActualizacion.toLocaleTimeString('es-CL')}
+                  Última Actualización: {ultimaActualizacion.toLocaleTimeString('es-CL')}
                 </p>
                 <button
                   onClick={() => cargarDatos()}
@@ -293,7 +343,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex items-center space-x-3">
-              {/* Botón Gestión de Grúas */}
+              {/* Botón de Gestión de Grúas */}
               <button
                 onClick={() => router.push('/dashboard/gruas')}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -333,7 +383,7 @@ export default function DashboardPage() {
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 Problemas Críticos
               </button>
-              {/* Botón Cerrar Sesión */}
+              {/* Botón de Cerrar Sesión */}
               <button
                 onClick={() => router.push('/login')}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
@@ -383,11 +433,11 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Gráfico de Tendencia */}
+        {/* Gr�f¡fico de Tendencia */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Tendencia Diaria (Últimos 30 días)</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Tendencia Diaria (Últimos)</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={tendencia}>
+            <LineChart data={tendenciaDataset}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="fecha" />
               <YAxis yAxisId="left" />
@@ -395,13 +445,22 @@ export default function DashboardPage() {
               <Tooltip />
               <Legend />
               <Line yAxisId="left" type="monotone" dataKey="score_promedio" stroke="#3b82f6" name="Score Promedio" />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="porcentaje_problemas"
+                stroke="#f97316"
+                strokeDasharray="5 5"
+                dot={false}
+                name="% con Problemas"
+              />
               <Line yAxisId="right" type="monotone" dataKey="total_inspecciones" stroke="#10b981" name="Inspecciones" />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Grid de 2 columnas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Bloques comparativos */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Top Grúas Problemáticas */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Grúas con Más Problemas</h2>
@@ -421,6 +480,17 @@ export default function DashboardPage() {
                     <div className="text-right">
                       <p className="font-semibold text-red-600">{grua.reportes_con_problemas} Reportes con Problemas</p>
                       <p className="text-sm text-gray-500">{grua.porcentaje_problemas}%</p>
+                      <button
+                        onClick={() => {
+                          const activoId = grua.activo_id ?? grua.id
+                          if (activoId) {
+                            router.push(`/dashboard/reportes?activo=${activoId}&problemas=true`)
+                          }
+                        }}
+                        className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Ver reportes
+                      </button>
                     </div>
                   </div>
                 ))
@@ -428,41 +498,114 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Análisis por Turno */}
+          {/* Uso de Grúas */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Análisis por Turno</h2>
-            {turnos && (
-              <div className="space-y-4">
-                {[1, 2, 3].map((turno) => {
-                  const data = turnos[`turno_${turno}`]
-                  return (
-                    <div key={turno} className="p-4 bg-gray-50 rounded">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium text-gray-900">Turno {turno}</h3>
-                        <span className="text-sm text-gray-500">{data.total_inspecciones} inspecciones</span>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Uso de Grúas (30 días)</h2>
+            <div className="space-y-3">
+              {topUso.length === 0 ? (
+                <p className="text-center py-8 text-gray-500">Aún no hay datos de uso registrados</p>
+              ) : (
+                topUso.map((item, idx) => (
+                  <div key={item.activoId} className="p-3 bg-gray-50 rounded">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {idx + 1}. {item.nombre}
+                        </p>
+                        <p className="text-xs text-gray-500">Inspecciones 30d: {item.inspecciones30}</p>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 text-sm">
-                        <div>
-                          <p className="text-gray-500">Score</p>
-                          <p className="font-semibold">{data.score_promedio}%</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Reportes con Problemas</p>
-                          <p className="font-semibold text-red-600">{data.con_problemas}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Horas Uso</p>
-                          <p className="font-semibold">{data.horas_uso}h</p>
-                        </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {item.horasUso30.toLocaleString('es-CL', { minimumFractionDigits: 1 })} h
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Últimos 7 días: {item.horasUso7.toLocaleString('es-CL', { minimumFractionDigits: 1 })} h
+                        </p>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
-            )}
+                    <button
+                      onClick={() => router.push(`/dashboard/reportes?activo=${item.activoId}`)}
+                      className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Ver reportes
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Horómetros pendientes */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Horómetros Pendientes (30 días)</h2>
+            <div className="space-y-3">
+              {topHorometrosPendientes.length === 0 ? (
+                <p className="text-center py-8 text-gray-500">No hay pendientes registrados</p>
+              ) : (
+                topHorometrosPendientes.map((item) => (
+                  <div key={item.activoId} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{item.nombre}</p>
+                      <p className="text-xs text-gray-500">Reportes con problemas: {item.problemas30}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-semibold text-orange-600">{item.horometrosPendientes}</p>
+                      <button
+                        onClick={() => router.push(`/dashboard/horometros?activo=${item.activoId}`)}
+                        className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Revisar
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Análisis por Turno */}
+        <div className="bg-white rounded-lg shadow p-6 mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Análisis por Turno</h2>
+            <button
+              onClick={() => router.push('/dashboard/reportes?problemas=true')}
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Ver reportes con problemas
+            </button>
+          </div>
+          {turnos && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[1, 2, 3].map((turno) => {
+                const data = turnos[`turno_${turno}`]
+                if (!data) return null
+                return (
+                  <div key={turno} className="p-4 bg-gray-50 rounded">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium text-gray-900">Turno {turno}</h3>
+                      <span className="text-sm text-gray-500">{data.total_inspecciones} inspecciones</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div>
+                        <p className="text-gray-500">Score</p>
+                        <p className="font-semibold">{data.score_promedio}%</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Reportes con Problemas</p>
+                        <p className="font-semibold text-red-600">{data.con_problemas}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Horas Uso</p>
+                        <p className="font-semibold">{data.horas_uso}h</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
         {/* Top Problemas */}
         <div className="bg-white rounded-lg shadow p-6 mt-8">
           <div className="flex items-center justify-between mb-4">
@@ -471,7 +614,7 @@ export default function DashboardPage() {
               onClick={() => router.push('/dashboard/problemas-criticos')}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
-              Ver análisis completo →
+              Ver análisis completo
             </button>
           </div>
           <div className="space-y-2">
@@ -509,7 +652,7 @@ export default function DashboardPage() {
               onClick={() => router.push('/dashboard/reportes')}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
-              Ver todos →
+              Ver todos
             </button>
           </div>
           <ReportesRecientesList />
@@ -518,3 +661,8 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+
+
+
+
