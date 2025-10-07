@@ -51,9 +51,44 @@ export default function ReportesPage() {
 
   useEffect(() => {
     const problemasParam = searchParams.get('problemas')
-    if (problemasParam === 'true') {
-      setSoloProblemas(true)
-      setFiltrosAplicados(true) // <-- Marcar que hay filtros desde URL
+    const activoParam = searchParams.get('activo')
+    const fechaDesdeParam = searchParams.get('desde')
+    const fechaHastaParam = searchParams.get('hasta')
+
+    let filtrosDesdeUrl = false
+
+    const problemasActivos = problemasParam === 'true'
+    setSoloProblemas(problemasActivos)
+    if (problemasActivos) {
+      filtrosDesdeUrl = true
+    }
+
+    if (activoParam) {
+      const activoId = Number(activoParam)
+      if (!Number.isNaN(activoId)) {
+        setActivoSeleccionado(activoId)
+        filtrosDesdeUrl = true
+      }
+    } else {
+      setActivoSeleccionado(undefined)
+    }
+
+    if (fechaDesdeParam) {
+      setFechaDesde(fechaDesdeParam)
+      filtrosDesdeUrl = true
+    } else {
+      setFechaDesde('')
+    }
+
+    if (fechaHastaParam) {
+      setFechaHasta(fechaHastaParam)
+      filtrosDesdeUrl = true
+    } else {
+      setFechaHasta('')
+    }
+
+    if (filtrosDesdeUrl) {
+      setFiltrosAplicados(true)
     }
   }, [searchParams])
 
@@ -78,8 +113,10 @@ export default function ReportesPage() {
       cargarUsuarios()
     ])
     
+    const hasUrlFilters = ['problemas', 'activo', 'desde', 'hasta'].some((param) => searchParams.has(param))
+
     // Solo cargar reportes inicialmente si NO hay filtros desde URL
-    if (!searchParams.get('problemas')) {
+    if (!hasUrlFilters) {
       await cargarReportes()
     }
     
@@ -160,10 +197,18 @@ async function cargarActivos() {
     setBusqueda('')
     setFiltrosAplicados(false)
 
-    if (searchParams.has('problemas')) {
-      const params = new URLSearchParams(Array.from(searchParams.entries()))
-      params.delete('problemas')
+    const params = new URLSearchParams(Array.from(searchParams.entries()))
+    let paramsModificados = false
+    const paramsToClear = ['problemas', 'activo', 'desde', 'hasta'] as const
 
+    paramsToClear.forEach((param) => {
+      if (params.has(param)) {
+        params.delete(param)
+        paramsModificados = true
+      }
+    })
+
+    if (paramsModificados) {
       const queryString = params.toString()
       router.replace(
         queryString ? `/dashboard/reportes?${queryString}` : '/dashboard/reportes',
@@ -172,7 +217,7 @@ async function cargarActivos() {
     }
   }
 
-  function handleLimpiarFiltros() {
+  const handleLimpiarFiltros = () => {
     limpiarFiltros()
     void aplicarFiltros({
       fechaDesde: undefined,
@@ -356,7 +401,7 @@ async function cargarActivos() {
           {/* Botones */}
           <div className="mt-4 flex gap-3">
             <button
-              onClick={aplicarFiltros}
+              onClick={() => void aplicarFiltros()}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
             >
               Aplicar Filtros

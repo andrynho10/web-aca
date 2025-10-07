@@ -45,6 +45,15 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
     return 'bg-red-500'
   }
 
+  function buildDateFromString(dateString: string) {
+    const parts = dateString.split('-').map(Number)
+    if (parts.length === 3 && parts.every(part => !Number.isNaN(part))) {
+      const [year, month, day] = parts
+      return new Date(year, month - 1, day)
+    }
+    return new Date(dateString)
+  }
+
   return (
     <div className="overflow-x-auto">
       <div className="inline-block min-w-full">
@@ -70,7 +79,8 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
           <div className="flex-1 overflow-x-auto">
             <div className="flex">
               {fechas.map(fecha => {
-                const fechaCorta = new Date(fecha).toLocaleDateString('es-CL', {
+                const fechaObj = buildDateFromString(fecha)
+                const fechaCorta = fechaObj.toLocaleDateString('es-CL', {
                   day: '2-digit',
                   month: 'short'
                 })
