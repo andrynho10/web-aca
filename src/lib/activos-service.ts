@@ -194,19 +194,32 @@ export function construirResumenUsoActivos(
 }
 
 // Nueva función usando RPC para calcular horas de uso eficientemente
-export async function obtenerResumenUsoActivosRPC(dias: number = 30) {
+export async function obtenerResumenUsoActivosRPC() {
   try {
-    // Usar la misma función RPC que usa la página de horómetros
-    const { data, error } = await supabase.rpc('obtener_correlacion_horometro_problemas', { dias })
+    // Hacer dos llamadas en paralelo: una para 30 días y otra para 7 días
+    const [resultado30, resultado7] = await Promise.all([
+      supabase.rpc('obtener_correlacion_horometro_problemas', { dias: 30 }),
+      supabase.rpc('obtener_correlacion_horometro_problemas', { dias: 7 })
+    ])
 
-    if (error) throw error
+    if (resultado30.error) throw resultado30.error
+    if (resultado7.error) throw resultado7.error
 
-    // Transformar a ResumenUsoActivo
-    return (data || []).map((item: any) => ({
+    const data30 = resultado30.data || []
+    const data7 = resultado7.data || []
+
+    // Crear un mapa de horas de uso de 7 días por activo_id
+    const horasUso7Map = new Map<number, number>()
+    for (const item of data7) {
+      horasUso7Map.set(item.activo_id, Number(item.total_horas_uso || 0))
+    }
+
+    // Transformar datos de 30 días y agregar horas de 7 días
+    return data30.map((item: any) => ({
       activoId: item.activo_id,
       nombre: item.activo_nombre,
       horasUso30: Number(item.total_horas_uso || 0),
-      horasUso7: 0, // La RPC no calcula 7 días, podríamos dejarlo en 0 o hacer otra llamada
+      horasUso7: horasUso7Map.get(item.activo_id) || 0,
       inspecciones30: Number(item.total_inspecciones || 0),
       problemas30: Number(item.inspecciones_con_problemas || 0),
       horometrosPendientes: 0

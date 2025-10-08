@@ -337,7 +337,7 @@ export default function DashboardPage() {
         obtenerAnalisisTurnos(30),
         obtenerTopGruasProblematicas(5, 30),
         obtenerTopProblemas(30),
-        obtenerResumenUsoActivosRPC(30),
+        obtenerResumenUsoActivosRPC(),
         cargarReportesRecientes()
       ])
 
