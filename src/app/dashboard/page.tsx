@@ -511,7 +511,7 @@ export default function DashboardPage() {
 
         {/* Gráfico de Tendencia */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Tendencia Diaria (Últimos)</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Tendencia Diaria (30 días)</h2>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={tendenciaDataset}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -539,7 +539,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* Top Grúas Problemáticas */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Grúas con Más Problemas</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Grúas con Más Problemas (30 días)</h2>
             <div className="space-y-3">
               {topGruas.length === 0 ? (
                 <p className="text-center py-8 text-gray-500">No hay datos suficientes</p>
@@ -615,7 +615,7 @@ export default function DashboardPage() {
         {/* Análisis por Turno */}
         <div className="bg-white rounded-lg shadow p-6 mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Análisis por Turno</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Análisis por Turno (30 días)</h2>
             <button
               onClick={() => router.push('/dashboard/reportes?problemas=true')}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
@@ -657,7 +657,7 @@ export default function DashboardPage() {
         {/* Top Problemas */}
         <div className="bg-white rounded-lg shadow p-6 mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Top 10 Problemas Más Frecuentes</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Top 10 Problemas Más Frecuentes (30 días)</h2>
             <button
               onClick={() => router.push('/dashboard/problemas-criticos')}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
