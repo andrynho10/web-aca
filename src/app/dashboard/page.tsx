@@ -37,56 +37,49 @@ type ReporteReciente = {
   operador_nombre: string
 }
 
-function ReportesRecientesList() {
-  const router = useRouter()
-  const [reportesRecientes, setReportesRecientes] = useState<ReporteReciente[]>([])
-  const [loading, setLoading] = useState(true)
+async function cargarReportesRecientes() {
+  try {
+    const { error: refreshError } = await supabase.rpc('refresh_mv_reportes_recientes')
 
-  useEffect(() => {
-    cargarReportesRecientes()
-  }, [])
-
-  async function cargarReportesRecientes() {
-    try {
-      const { error: refreshError } = await supabase.rpc('refresh_mv_reportes_recientes')
-
-      if (refreshError && refreshError.code !== '55P03' && refreshError.code !== '55P02') {
-        throw refreshError
-      }
-
-      const { data, error } = await supabase
-        .from('mv_reportes_recientes')
-        .select(`
-          id,
-          timestamp_completado,
-          tiene_problemas,
-          score_cumplimiento,
-          activo_nombre,
-          operador_nombre
-        `)
-        .order('timestamp_completado', { ascending: false })
-        .limit(10)
-
-      if (error) throw error
-      setReportesRecientes((data ?? []) as ReporteReciente[])
-    } catch (error) {
-      console.error('Error cargando reportes recientes:', error)
-    } finally {
-      setLoading(false)
+    if (refreshError && refreshError.code !== '55P03' && refreshError.code !== '55P02') {
+      throw refreshError
     }
+
+    const { data, error } = await supabase
+      .from('mv_reportes_recientes')
+      .select(`
+        id,
+        timestamp_completado,
+        tiene_problemas,
+        score_cumplimiento,
+        activo_nombre,
+        operador_nombre
+      `)
+      .order('timestamp_completado', { ascending: false })
+      .limit(10)
+
+    if (error) throw error
+    return (data ?? []) as ReporteReciente[]
+  } catch (error) {
+    console.error('Error cargando reportes recientes:', error)
+    return []
   }
+}
+
+function ReportesRecientesList({ reportes, loading }: { reportes: ReporteReciente[], loading: boolean }) {
+  const router = useRouter()
 
   if (loading) {
     return <div className="text-center py-4 text-gray-500">Cargando...</div>
   }
 
-  if (reportesRecientes.length === 0) {
+  if (reportes.length === 0) {
     return <div className="text-center py-4 text-gray-500">No hay reportes recientes</div>
   }
 
   return (
     <div className="space-y-2">
-      {reportesRecientes.map((reporte) => {
+      {reportes.map((reporte) => {
         const fecha = new Date(reporte.timestamp_completado).toLocaleString('es-CL', {
           day: '2-digit',
           month: 'short',
@@ -138,6 +131,7 @@ export default function DashboardPage() {
   const [topProblemas, setTopProblemas] = useState<any[]>([])
   const [ultimaActualizacion, setUltimaActualizacion] = useState<Date>(new Date())
   const [resumenUsoActivos, setResumenUsoActivos] = useState<ResumenUsoActivo[]>([])
+  const [reportesRecientes, setReportesRecientes] = useState<ReporteReciente[]>([])
 
   const tendenciaDataset = useMemo(() => {
     return tendencia.map((item) => {
@@ -270,14 +264,16 @@ export default function DashboardPage() {
         turnosData,
         gruasData,
         problemasData,
-        agregadosData
+        agregadosData,
+        reportesData
       ] = await Promise.all([
         obtenerKPIs(),
         obtenerTendenciaDiaria(30),
         obtenerAnalisisTurnos(30),
         obtenerTopGruasProblematicas(5, 30),
         obtenerTopProblemas(30),
-        obtenerAgregadosDiariosActivos(30)
+        obtenerAgregadosDiariosActivos(30),
+        cargarReportesRecientes()
       ])
 
       setKpis(kpisData)
@@ -286,6 +282,7 @@ export default function DashboardPage() {
       setTopGruas(gruasData)
       setTopProblemas(problemasData)
       setResumenUsoActivos(construirResumenUsoActivos(agregadosData))
+      setReportesRecientes(reportesData)
       setUltimaActualizacion(new Date())
     } catch (error) {
       console.error('Error cargando datos:', error)
@@ -620,7 +617,7 @@ export default function DashboardPage() {
               Ver todos
             </button>
           </div>
-          <ReportesRecientesList />
+          <ReportesRecientesList reportes={reportesRecientes} loading={loading} />
         </div>
       </main>
     </div>
