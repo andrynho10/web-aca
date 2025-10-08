@@ -171,13 +171,6 @@ export default function DashboardPage() {
       .slice(0, 5)
   }, [resumenUsoActivos])
 
-  const topHorometrosPendientes = useMemo(() => {
-    return [...resumenUsoActivos]
-      .filter((item) => item.horometrosPendientes > 0)
-      .sort((a, b) => b.horometrosPendientes - a.horometrosPendientes)
-      .slice(0, 5)
-  }, [resumenUsoActivos])
-
   useEffect(() => {
     checkAuth()
   }, [])
@@ -460,7 +453,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Bloques comparativos */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* Top Grúas Problemáticas */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Grúas con Más Problemas</h2>
@@ -529,34 +522,6 @@ export default function DashboardPage() {
                     >
                       Ver reportes
                     </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Horómetros pendientes */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Horómetros Pendientes (30 días)</h2>
-            <div className="space-y-3">
-              {topHorometrosPendientes.length === 0 ? (
-                <p className="text-center py-8 text-gray-500">No hay pendientes registrados</p>
-              ) : (
-                topHorometrosPendientes.map((item) => (
-                  <div key={item.activoId} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{item.nombre}</p>
-                      <p className="text-xs text-gray-500">Reportes con problemas: {item.problemas30}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-orange-600">{item.horometrosPendientes}</p>
-                      <button
-                        onClick={() => router.push(`/dashboard/horometros?activo=${item.activoId}`)}
-                        className="mt-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
-                      >
-                        Revisar
-                      </button>
-                    </div>
                   </div>
                 ))
               )}
