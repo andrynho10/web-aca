@@ -28,7 +28,7 @@ import {
 import { KPIsDashboard } from '@/lib/supabase'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 import { supabase } from '@/lib/supabase'
-import { construirResumenUsoActivos, obtenerAgregadosDiariosActivos, ResumenUsoActivo } from '@/lib/activos-service'
+import { obtenerResumenUsoActivosRPC, ResumenUsoActivo } from '@/lib/activos-service'
 
 type ReporteReciente = {
   id: string
@@ -329,7 +329,7 @@ export default function DashboardPage() {
         turnosData,
         gruasData,
         problemasData,
-        agregadosData,
+        resumenUsoData,
         reportesData
       ] = await Promise.all([
         obtenerKPIs(),
@@ -337,7 +337,7 @@ export default function DashboardPage() {
         obtenerAnalisisTurnos(30),
         obtenerTopGruasProblematicas(5, 30),
         obtenerTopProblemas(30),
-        obtenerAgregadosDiariosActivos(30),
+        obtenerResumenUsoActivosRPC(30),
         cargarReportesRecientes()
       ])
 
@@ -346,7 +346,7 @@ export default function DashboardPage() {
       setTurnos(turnosData)
       setTopGruas(gruasData)
       setTopProblemas(problemasData)
-      setResumenUsoActivos(construirResumenUsoActivos(agregadosData))
+      setResumenUsoActivos(resumenUsoData)
       setReportesRecientes(reportesData)
       setUltimaActualizacion(new Date())
     } catch (error) {
@@ -374,10 +374,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-white shadow relative z-30">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
           {/* Layout con 3 secciones: izquierda, centro, derecha */}
-          <div className="flex items-center justify-between lg:grid lg:grid-cols-3 lg:gap-4">
+          <div className="flex items-center justify-between lg:grid lg:grid-cols-[300px_1fr_auto] lg:gap-4">
             {/* Sección Izquierda: Título e Info */}
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Panel de Supervisor</h1>
@@ -509,7 +509,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Gr�f¡fico de Tendencia */}
+        {/* Gráfico de Tendencia */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Tendencia Diaria (Últimos)</h2>
           <ResponsiveContainer width="100%" height={300}>

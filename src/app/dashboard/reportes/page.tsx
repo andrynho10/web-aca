@@ -44,6 +44,8 @@ export default function ReportesPage() {
   const [soloProblemas, setSoloProblemas] = useState(false)
   const [turnoSeleccionado, setTurnoSeleccionado] = useState<number | undefined>()
   const [busqueda, setBusqueda] = useState('')
+  const [mostrandoLimitado, setMostrandoLimitado] = useState(true)
+  const [cargandoTodo, setCargandoTodo] = useState(false)
 
   useEffect(() => {
     checkAuthAndLoad()
@@ -123,7 +125,7 @@ export default function ReportesPage() {
     setLoading(false)
   }
 
-  async function cargarReportes(overrides: ReportesFiltroOverrides = {}) {
+  async function cargarReportes(overrides: ReportesFiltroOverrides = {}, cargarTodo = false) {
     const fechaDesdeValue = Object.prototype.hasOwnProperty.call(overrides, 'fechaDesde')
       ? overrides.fechaDesde
       : fechaDesde
@@ -143,22 +145,21 @@ export default function ReportesPage() {
       ? overrides.soloProblemas ?? false
       : soloProblemas
 
-    let data = await obtenerReportesConFiltros(
+    const data = await obtenerReportesConFiltros(
       fechaDesdeValue || undefined,
       fechaHastaValue || undefined,
       activoValue,
-      soloProblemasValue
+      soloProblemasValue,
+      operadorValue,
+      turnoValue,
+      cargarTodo
     )
 
-    if (operadorValue) {
-      data = data.filter(r => r.usuario_id === operadorValue)
-    }
-
-    if (turnoValue) {
-      data = data.filter(r => r.turno === turnoValue)
-    }
-
     setReportes(data)
+
+    // Determinar si estamos mostrando datos limitados
+    const tieneRangoFechas = !!(fechaDesdeValue || fechaHastaValue)
+    setMostrandoLimitado(!cargarTodo && !tieneRangoFechas)
   }
 
 async function cargarActivos() {
@@ -185,6 +186,12 @@ async function cargarActivos() {
     setLoading(true)
     await cargarReportes(overrides)
     setLoading(false)
+  }
+
+  async function cargarTodosLosReportes() {
+    setCargandoTodo(true)
+    await cargarReportes({}, true)
+    setCargandoTodo(false)
   }
 
   function limpiarFiltros() {
@@ -267,7 +274,14 @@ async function cargarActivos() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Lista de Reportes</h1>
-              <p className="text-sm text-gray-600">{reportesFiltrados.length} reportes encontrados</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-600">{reportesFiltrados.length} reportes encontrados</p>
+                {mostrandoLimitado && (
+                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    Últimos 30 días
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -414,6 +428,30 @@ async function cargarActivos() {
             </button>
           </div>
         </div>
+
+        {/* Banner informativo cuando se muestra limitado */}
+        {mostrandoLimitado && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  Mostrando reportes de los últimos 30 días (máximo 1000)
+                </p>
+                <p className="text-xs text-blue-700 mt-1">
+                  Para ver reportes más antiguos, use los filtros de fecha o cargue todo el historial.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={cargarTodosLosReportes}
+              disabled={cargandoTodo}
+              className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {cargandoTodo ? 'Cargando...' : 'Cargar Todo'}
+            </button>
+          </div>
+        )}
 
         {/* Lista de Reportes */}
         <div className="bg-white rounded-lg shadow divide-y divide-gray-200">

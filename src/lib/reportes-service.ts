@@ -79,7 +79,10 @@ export async function obtenerReportesConFiltros(
   fechaDesde?: string,
   fechaHasta?: string,
   activoId?: number,
-  soloConProblemas?: boolean
+  soloConProblemas?: boolean,
+  operadorId?: string,
+  turno?: number,
+  cargarTodo?: boolean
 ) {
   try {
     let query = supabase
@@ -91,12 +94,19 @@ export async function obtenerReportesConFiltros(
       `)
       .order('timestamp_completado', { ascending: false })
 
-    if (fechaDesde) {
-      query = query.gte('timestamp_completado', fechaDesde)
-    }
+    // Si no se especifica fecha y no se pide cargar todo, limitar a últimos 30 días
+    if (!fechaDesde && !fechaHasta && !cargarTodo) {
+      const fecha30DiasAtras = new Date()
+      fecha30DiasAtras.setDate(fecha30DiasAtras.getDate() - 30)
+      query = query.gte('timestamp_completado', fecha30DiasAtras.toISOString())
+    } else {
+      if (fechaDesde) {
+        query = query.gte('timestamp_completado', fechaDesde)
+      }
 
-    if (fechaHasta) {
-      query = query.lte('timestamp_completado', fechaHasta)
+      if (fechaHasta) {
+        query = query.lte('timestamp_completado', fechaHasta)
+      }
     }
 
     if (activoId) {
@@ -105,6 +115,19 @@ export async function obtenerReportesConFiltros(
 
     if (soloConProblemas) {
       query = query.eq('tiene_problemas', true)
+    }
+
+    if (operadorId) {
+      query = query.eq('usuario_id', operadorId)
+    }
+
+    if (turno !== undefined) {
+      query = query.eq('turno', turno)
+    }
+
+    // Límite de seguridad: máximo 1000 reportes
+    if (!cargarTodo) {
+      query = query.limit(1000)
     }
 
     const { data, error } = await query

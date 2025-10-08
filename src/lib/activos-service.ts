@@ -192,3 +192,27 @@ export function construirResumenUsoActivos(
     horasUso7: Number(resumen.horasUso7.toFixed(1))
   }))
 }
+
+// Nueva función usando RPC para calcular horas de uso eficientemente
+export async function obtenerResumenUsoActivosRPC(dias: number = 30) {
+  try {
+    // Usar la misma función RPC que usa la página de horómetros
+    const { data, error } = await supabase.rpc('obtener_correlacion_horometro_problemas', { dias })
+
+    if (error) throw error
+
+    // Transformar a ResumenUsoActivo
+    return (data || []).map((item: any) => ({
+      activoId: item.activo_id,
+      nombre: item.activo_nombre,
+      horasUso30: Number(item.total_horas_uso || 0),
+      horasUso7: 0, // La RPC no calcula 7 días, podríamos dejarlo en 0 o hacer otra llamada
+      inspecciones30: Number(item.total_inspecciones || 0),
+      problemas30: Number(item.inspecciones_con_problemas || 0),
+      horometrosPendientes: 0
+    }))
+  } catch (error) {
+    console.error('Error obteniendo resumen de uso vía RPC:', error)
+    return []
+  }
+}
