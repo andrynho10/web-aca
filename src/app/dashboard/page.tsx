@@ -14,7 +14,8 @@ import {
   Calendar,
   RefreshCw,
   Menu,
-  X
+  X,
+  FileText
 } from 'lucide-react'
 import { KPICard } from '@/components/KPICard'
 import { getCurrentUser } from '@/lib/auth'
@@ -198,6 +199,7 @@ export default function DashboardPage() {
   const [reportesRecientes, setReportesRecientes] = useState<ReporteReciente[]>([])
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false)
   const [mostrarTodasGruas, setMostrarTodasGruas] = useState(false)
+  const [mostrarTodasGruasProblematicas, setMostrarTodasGruasProblematicas] = useState(false)
 
   const tendenciaDataset = useMemo(() => {
     return tendencia
@@ -239,6 +241,7 @@ export default function DashboardPage() {
   }, [resumenUsoActivos])
 
   const gruasMostradas = mostrarTodasGruas ? topUso : topUso.slice(0, 5)
+  const gruasProblematicasMostradas = mostrarTodasGruasProblematicas ? topGruas : topGruas.slice(0, 5)
 
   useEffect(() => {
     checkAuth()
@@ -345,7 +348,7 @@ export default function DashboardPage() {
         obtenerKPIs(),
         obtenerTendenciaDiaria(30),
         obtenerAnalisisTurnos(30),
-        obtenerTopGruasProblematicas(5, 30),
+        obtenerTopGruasProblematicas(10, 30),
         obtenerTopProblemas(30),
         obtenerResumenUsoActivosRPC(),
         cargarReportesRecientes()
@@ -419,6 +422,14 @@ export default function DashboardPage() {
                 >
                   <Forklift className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="whitespace-nowrap">Gestión de Grúas</span>
+                </button>
+                {/* Botón Reportes */}
+                <button
+                  onClick={() => router.push('/dashboard/reportes')}
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-cyan-600 text-white text-base font-normal rounded-md hover:bg-cyan-700 transition-colors"
+                >
+                  <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Reportes</span>
                 </button>
                 {/* Botón Heatmap */}
                 <button
@@ -549,12 +560,22 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* Top Grúas Problemáticas */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Grúas con Más Problemas (30 días)</h2>
-            <div className="space-y-3">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Top 10 Grúas con Más Problemas (30 días)</h2>
+              {topGruas.length > 5 && (
+                <button
+                  onClick={() => setMostrarTodasGruasProblematicas(!mostrarTodasGruasProblematicas)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  {mostrarTodasGruasProblematicas ? 'Ver menos' : `Ver todas (${topGruas.length})`}
+                </button>
+              )}
+            </div>
+            <div className={`space-y-3 ${mostrarTodasGruasProblematicas ? 'max-h-[400px] overflow-y-auto pr-2' : ''}`}>
               {topGruas.length === 0 ? (
                 <p className="text-center py-8 text-gray-500">No hay datos suficientes</p>
               ) : (
-                topGruas.map((grua, idx) => (
+                gruasProblematicasMostradas.map((grua, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                     <div className="flex items-center">
                       <Forklift className="w-5 h-5 text-gray-400 mr-3" />
@@ -759,6 +780,17 @@ export default function DashboardPage() {
               >
                 <Forklift className="w-5 h-5 mr-3" />
                 <span className="font-medium">Gestión de Grúas</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  router.push('/dashboard/reportes')
+                  setMenuMovilAbierto(false)
+                }}
+                className="flex items-center px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+              >
+                <FileText className="w-5 h-5 mr-3" />
+                <span className="font-medium">Reportes</span>
               </button>
 
               <button
