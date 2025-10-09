@@ -41,11 +41,68 @@ export async function obtenerAnalisisOperadores(dias: number = 90) {
 export async function obtenerAnalisisCentroCosto(dias: number = 90) {
   try {
     const { data, error } = await supabase.rpc('obtener_analisis_centro_costo', { dias })
-    
+
     if (error) throw error
     return data as AnalisisCentroCosto[]
   } catch (error) {
     console.error('Error obteniendo análisis centro costo:', error)
+    return []
+  }
+}
+
+export async function obtenerTodosLosOperadores(dias: number = 90) {
+  try {
+    // Obtener análisis de operadores con inspecciones
+    const { data: operadoresConInspecciones, error: errorRPC } = await supabase.rpc('obtener_analisis_operadores', { dias })
+
+    if (errorRPC) throw errorRPC
+
+    // Obtener TODOS los operadores de la tabla usuarios
+    const { data: todosOperadores, error: errorUsuarios } = await supabase
+      .from('usuarios')
+      .select('id, nombre_completo, rut, id_alternativo, centro_costo, fecha_ingreso, cargo')
+      .eq('rol', 'OPERADOR')
+      .order('nombre_completo', { ascending: true })
+
+    if (errorUsuarios) throw errorUsuarios
+
+    // Crear un mapa con los operadores que tienen inspecciones
+    const mapaInspecciones = new Map<string, AnalisisOperador>()
+    for (const op of (operadoresConInspecciones || [])) {
+      mapaInspecciones.set(op.usuario_id, op)
+    }
+
+    // Combinar: todos los operadores con sus datos de inspección (si existen)
+    const resultado: AnalisisOperador[] = (todosOperadores || []).map(operador => {
+      const datosInspecciones = mapaInspecciones.get(operador.id)
+
+      if (datosInspecciones) {
+        // Operador tiene inspecciones, usar esos datos
+        return datosInspecciones
+      } else {
+        // Operador sin inspecciones, crear entrada con valores en 0
+        return {
+          usuario_id: operador.id,
+          nombre_completo: operador.nombre_completo,
+          rut: operador.rut,
+          id_alternativo: operador.id_alternativo,
+          centro_costo: operador.centro_costo,
+          fecha_ingreso: operador.fecha_ingreso,
+          cargo: operador.cargo,
+          total_inspecciones: 0,
+          inspecciones_con_problemas: 0,
+          porcentaje_problemas: 0,
+          score_promedio: 0,
+          duracion_promedio_minutos: 0,
+          ultima_inspeccion: '',
+          dias_desde_ultima: -1 // -1 indica "sin inspecciones"
+        }
+      }
+    })
+
+    return resultado
+  } catch (error) {
+    console.error('Error obteniendo todos los operadores:', error)
     return []
   }
 }

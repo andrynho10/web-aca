@@ -14,8 +14,8 @@ import {
   Clock
 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
-import { 
-  obtenerAnalisisOperadores,
+import {
+  obtenerTodosLosOperadores,
   obtenerAnalisisCentroCosto,
   AnalisisOperador,
   AnalisisCentroCosto
@@ -56,7 +56,7 @@ export default function OperadoresPage() {
   async function cargarDatos() {
     setLoading(true)
     const [operadoresData, centrosData] = await Promise.all([
-      obtenerAnalisisOperadores(dias),
+      obtenerTodosLosOperadores(dias),
       obtenerAnalisisCentroCosto(dias)
     ])
 
@@ -290,27 +290,37 @@ export default function OperadoresPage() {
                         {operador.total_inspecciones}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`font-semibold ${
-                          operador.score_promedio >= 95 ? 'text-green-600' :
-                          operador.score_promedio >= 85 ? 'text-yellow-600' :
-                          'text-red-600'
-                        }`}>
-                          {operador.score_promedio}%
-                        </span>
+                        {operador.total_inspecciones === 0 ? (
+                          <span className="text-gray-400 italic">-</span>
+                        ) : (
+                          <span className={`font-semibold ${
+                            operador.score_promedio >= 95 ? 'text-green-600' :
+                            operador.score_promedio >= 85 ? 'text-yellow-600' :
+                            'text-red-600'
+                          }`}>
+                            {operador.score_promedio}%
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`font-semibold ${
-                          operador.porcentaje_problemas < 10 ? 'text-green-600' :
-                          operador.porcentaje_problemas < 20 ? 'text-yellow-600' :
-                          'text-red-600'
-                        }`}>
-                          {operador.porcentaje_problemas}%
-                        </span>
+                        {operador.total_inspecciones === 0 ? (
+                          <span className="text-gray-400 italic">-</span>
+                        ) : (
+                          <span className={`font-semibold ${
+                            operador.porcentaje_problemas < 10 ? 'text-green-600' :
+                            operador.porcentaje_problemas < 20 ? 'text-yellow-600' :
+                            'text-red-600'
+                          }`}>
+                            {operador.porcentaje_problemas}%
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {operador.dias_desde_ultima === 0 
-                          ? 'Hoy'
-                          : `Hace ${Math.floor(operador.dias_desde_ultima)} días`
+                        {operador.dias_desde_ultima === -1
+                          ? <span className="text-gray-400 italic">Sin inspecciones</span>
+                          : operador.dias_desde_ultima === 0
+                            ? 'Hoy'
+                            : `Hace ${Math.floor(operador.dias_desde_ultima)} días`
                         }
                       </td>
                     </tr>
