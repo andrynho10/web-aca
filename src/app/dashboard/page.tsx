@@ -197,6 +197,7 @@ export default function DashboardPage() {
   const [resumenUsoActivos, setResumenUsoActivos] = useState<ResumenUsoActivo[]>([])
   const [reportesRecientes, setReportesRecientes] = useState<ReporteReciente[]>([])
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false)
+  const [mostrarTodasGruas, setMostrarTodasGruas] = useState(false)
 
   const tendenciaDataset = useMemo(() => {
     return tendencia
@@ -234,8 +235,10 @@ export default function DashboardPage() {
     return [...resumenUsoActivos]
       .filter((item) => item.horasUso30 > 0 || item.horasUso7 > 0)
       .sort((a, b) => b.horasUso30 - a.horasUso30)
-      .slice(0, 5)
+      .slice(0, 20) // Máximo 20 grúas
   }, [resumenUsoActivos])
+
+  const gruasMostradas = mostrarTodasGruas ? topUso : topUso.slice(0, 5)
 
   useEffect(() => {
     checkAuth()
@@ -583,12 +586,22 @@ export default function DashboardPage() {
 
           {/* Uso de Grúas */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Uso de Grúas (30 días)</h2>
-            <div className="space-y-3">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Uso de Grúas (30 días)</h2>
+              {topUso.length > 5 && (
+                <button
+                  onClick={() => setMostrarTodasGruas(!mostrarTodasGruas)}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  {mostrarTodasGruas ? 'Ver menos' : `Ver todas (${topUso.length})`}
+                </button>
+              )}
+            </div>
+            <div className={`space-y-3 ${mostrarTodasGruas ? 'max-h-[400px] overflow-y-auto pr-2' : ''}`}>
               {topUso.length === 0 ? (
                 <p className="text-center py-8 text-gray-500">Aún no hay datos de uso registrados</p>
               ) : (
-                topUso.map((item, idx) => (
+                gruasMostradas.map((item, idx) => (
                   <div key={item.activoId} className="p-3 bg-gray-50 rounded">
                     <div className="flex items-start justify-between">
                       <div>
