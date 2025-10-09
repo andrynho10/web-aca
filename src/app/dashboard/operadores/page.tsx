@@ -154,10 +154,12 @@ export default function OperadoresPage() {
               <div>
                 <p className="text-sm text-gray-600">Score Promedio</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {operadores.length > 0 
-                    ? (operadores.reduce((sum, op) => sum + op.score_promedio, 0) / operadores.length).toFixed(1)
-                    : 0
-                  }%
+                  {(() => {
+                    const operadoresConInspecciones = operadores.filter(op => op.total_inspecciones > 0)
+                    return operadoresConInspecciones.length > 0
+                      ? (operadoresConInspecciones.reduce((sum, op) => sum + op.score_promedio, 0) / operadoresConInspecciones.length).toFixed(1)
+                      : 0
+                  })()}%
                 </p>
               </div>
             </div>
@@ -180,7 +182,9 @@ export default function OperadoresPage() {
               <Building2 className="w-8 h-8 text-orange-600" />
               <div>
                 <p className="text-sm text-gray-600">Centros de Costo</p>
-                <p className="text-2xl font-bold text-gray-900">{centrosCosto.length}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {new Set(operadores.map(op => op.centro_costo).filter(cc => cc !== null)).size}
+                </p>
               </div>
             </div>
           </div>
