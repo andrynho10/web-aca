@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  ArrowLeft, 
-  Timer, 
-  TrendingUp, 
+import {
+  ArrowLeft,
+  Timer,
+  TrendingUp,
   AlertTriangle,
   Clock,
   Activity,
   Gauge,
-  Users
+  Users,
+  RefreshCw
 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { 
@@ -23,15 +24,18 @@ import {
 } from '@/lib/horometros-service'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, Cell } from 'recharts'
 import { obtenerOperadoresHorometrosPendientes, OperadorHorometroPendiente } from '@/lib/horometros-service'
+import { supabase } from '@/lib/supabase'
 
 export default function HorometrosPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [actualizando, setActualizando] = useState(false)
   const [correlacion, setCorrelacion] = useState<CorrelacionHorometro[]>([])
   const [eficiencia, setEficiencia] = useState<EficienciaHorometro[]>([])
   const [estado, setEstado] = useState<EstadoHorometro[]>([])
   const [dias, setDias] = useState(90)
   const [operadoresPendientes, setOperadoresPendientes] = useState<OperadorHorometroPendiente[]>([])
+  const [usuario, setUsuario] = useState<any>(null)
 
   // Verificar autenticación al montar
   useEffect(() => {
@@ -46,34 +50,97 @@ export default function HorometrosPage() {
     }
   }, [dias])
 
+  // ========================================
+  // REALTIME SUBSCRIPTION para horómetros pendientes
+  // ========================================
+  useEffect(() => {
+    if (!usuario) return
+
+    console.log('[Horómetros] Conectando a Realtime...')
+
+    const channel = supabase
+      .channel('horometros-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'reportes_inspeccion'
+        },
+        (payload) => {
+          console.log('[Horómetros] Nuevo reporte detectado:', payload.new)
+          cargarDatos(true) // Actualización silenciosa
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reportes_inspeccion'
+        },
+        (payload) => {
+          console.log('[Horómetros] Reporte actualizado:', payload.new)
+          cargarDatos(true)
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[Horómetros] Conectado a Realtime')
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('[Horómetros] Error en canal Realtime')
+        }
+      })
+
+    return () => {
+      console.log('[Horómetros] Desconectando Realtime...')
+      supabase.removeChannel(channel)
+    }
+  }, [usuario])
+
   async function checkAuthAndLoad() {
     const user = await getCurrentUser()
-    
+
     if (!user || user.rol !== 'SUPERVISOR') {
       router.push('/login')
       return
     }
 
+    setUsuario(user)
     await cargarDatos()
     setLoading(false)
   }
 
-  async function cargarDatos() {
-    setLoading(true)
-    
-    const [correlacionData, eficienciaData, estadoData, pendientesData] = await Promise.all([
-        obtenerCorrelacionHorometroProblemas(dias),
-        obtenerEficienciaHorometro(dias),
-        obtenerEstadoHorometros(),
-        obtenerOperadoresHorometrosPendientes()
-    ])
+  async function cargarDatos(silencioso: boolean = false) {
+    if (!silencioso) {
+      setLoading(true)
+    } else {
+      setActualizando(true)
+    }
 
-    setCorrelacion(correlacionData)
-    setEficiencia(eficienciaData)
-    setEstado(estadoData)
-    setOperadoresPendientes(pendientesData)   
-    setLoading(false)
-}
+    try {
+      const [correlacionData, eficienciaData, estadoData, pendientesData] = await Promise.all([
+          obtenerCorrelacionHorometroProblemas(dias),
+          obtenerEficienciaHorometro(dias),
+          obtenerEstadoHorometros(),
+          obtenerOperadoresHorometrosPendientes()
+      ])
+
+      setCorrelacion(correlacionData)
+      setEficiencia(eficienciaData)
+      setEstado(estadoData)
+      setOperadoresPendientes(pendientesData)
+    } catch (error) {
+      console.error('Error cargando datos de horómetros:', error)
+    } finally {
+      if (!silencioso) {
+        setLoading(false)
+      } else {
+        setActualizando(false)
+      }
+    }
+  }
 
   if (loading) {
     return (
@@ -110,7 +177,15 @@ export default function HorometrosPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Análisis de Horómetros</h1>
-              <p className="text-sm text-gray-600">Uso, eficiencia y correlación con problemas</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-600">Uso, eficiencia y correlación con problemas</p>
+                {actualizando && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    Actualizando...
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Selector de período */}
@@ -255,7 +330,7 @@ export default function HorometrosPage() {
                                 </span>
                             </div>
                             <div className="text-sm text-gray-600 mt-1">
-                                Inicio: {new Date(reporte.timestamp_inicio).toLocaleString('es-CL')}
+                                Inicio: {new Date(reporte.timestamp_inicio).toLocaleDateString('es-CL')} {new Date(reporte.timestamp_inicio).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false })}
                                 {reporte.horometro_inicial && (
                                 <span className="ml-3">
                                     Horómetro inicial: <span className="font-medium">{reporte.horometro_inicial}h</span>
