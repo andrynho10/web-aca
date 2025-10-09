@@ -199,28 +199,35 @@ export default function DashboardPage() {
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false)
 
   const tendenciaDataset = useMemo(() => {
-    return tendencia.map((item) => {
-      const totalInspecciones = Number((item as any)?.total_inspecciones ?? 0) || 0
-      const rawProblemas =
-        Number(
-          (item as any)?.inspecciones_con_problemas ??
-          (item as any)?.reportes_con_problemas ??
-          (item as any)?.total_con_problemas ??
-          0
-        ) || 0
-      const porcentajeProblemas =
-        totalInspecciones > 0
-          ? Number(((rawProblemas / totalInspecciones) * 100).toFixed(1))
-          : 0
+    return tendencia
+      .map((item) => {
+        const totalInspecciones = Number((item as any)?.total_inspecciones ?? 0) || 0
+        const rawProblemas =
+          Number(
+            (item as any)?.inspecciones_con_problemas ??
+            (item as any)?.reportes_con_problemas ??
+            (item as any)?.total_con_problemas ??
+            0
+          ) || 0
+        const porcentajeProblemas =
+          totalInspecciones > 0
+            ? Number(((rawProblemas / totalInspecciones) * 100).toFixed(1))
+            : 0
 
-      return {
-        ...item,
-        total_inspecciones: totalInspecciones,
-        score_promedio: Number((item as any)?.score_promedio ?? 0) || 0,
-        porcentaje_problemas: porcentajeProblemas,
-        inspecciones_con_problemas: rawProblemas
-      }
-    })
+        return {
+          ...item,
+          total_inspecciones: totalInspecciones,
+          score_promedio: Number((item as any)?.score_promedio ?? 0) || 0,
+          porcentaje_problemas: porcentajeProblemas,
+          inspecciones_con_problemas: rawProblemas
+        }
+      })
+      .sort((a, b) => {
+        // Ordenar por fecha ascendente (más antigua a más reciente)
+        const fechaA = (a as any).fecha || ''
+        const fechaB = (b as any).fecha || ''
+        return fechaA.localeCompare(fechaB)
+      })
   }, [tendencia])
 
   const topUso = useMemo(() => {
