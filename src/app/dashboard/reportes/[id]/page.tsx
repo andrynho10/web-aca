@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Clock, 
-  User, 
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  User,
   Forklift,
   AlertTriangle,
   CheckCircle,
   MessageSquare,
   Image as ImageIcon,
-  Timer
+  Timer,
+  Download
 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { obtenerReporteDetalle, ReporteDetalle } from '@/lib/reportes-service'
@@ -45,6 +46,26 @@ export default function ReporteDetallePage() {
   async function cargarReporte() {
     const data = await obtenerReporteDetalle(reporteId)
     setReporte(data)
+  }
+
+  async function descargarImagen(url: string) {
+    try {
+      const response = await fetch(url)
+      const blob = await response.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = `foto-reporte-${reporteId}-${Date.now()}.jpg`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      window.URL.revokeObjectURL(blobUrl)
+    } catch (error) {
+      console.error('Error descargando imagen:', error)
+      alert('Error al descargar la imagen')
+    }
   }
 
   if (loading) {
@@ -295,20 +316,33 @@ export default function ReporteDetallePage() {
 
       {/* Modal de Imagen Ampliada */}
       {imagenAmpliada && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
           onClick={() => setImagenAmpliada(null)}
         >
-          <button
-            className="absolute top-4 right-4 text-white text-xl font-bold hover:text-gray-300"
-            onClick={() => setImagenAmpliada(null)}
-          >
-            ✕
-          </button>
+          <div className="absolute top-4 right-4 flex items-center gap-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                descargarImagen(imagenAmpliada)
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Descargar
+            </button>
+            <button
+              className="text-white text-xl font-bold hover:text-gray-300 p-2"
+              onClick={() => setImagenAmpliada(null)}
+            >
+              ✕
+            </button>
+          </div>
           <img
             src={imagenAmpliada}
             alt="Imagen ampliada"
             className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
