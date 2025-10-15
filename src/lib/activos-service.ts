@@ -229,3 +229,125 @@ export async function obtenerResumenUsoActivosRPC() {
     return []
   }
 }
+
+// CRUD de Activos
+export type CrearActivoInput = {
+  nombre: string
+  modelo: string
+  tipo: string
+  codigo_qr: string
+  es_operativa?: boolean
+  horometro_actual?: number | null
+}
+
+export type ActualizarActivoInput = {
+  nombre?: string
+  modelo?: string
+  tipo?: string
+  codigo_qr?: string
+  es_operativa?: boolean
+  horometro_actual?: number | null
+}
+
+export async function crearActivo(input: CrearActivoInput) {
+  try {
+    const { data, error } = await supabase
+      .from('activos')
+      .insert([{
+        nombre: input.nombre,
+        modelo: input.modelo,
+        tipo: input.tipo,
+        codigo_qr: input.codigo_qr,
+        es_operativa: input.es_operativa ?? true,
+        horometro_actual: input.horometro_actual ?? null
+      }])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { success: true, data }
+  } catch (error: any) {
+    console.error('Error creando activo:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+export async function actualizarActivo(activoId: number, input: ActualizarActivoInput) {
+  try {
+    const { data, error } = await supabase
+      .from('activos')
+      .update(input)
+      .eq('id', activoId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { success: true, data }
+  } catch (error: any) {
+    console.error('Error actualizando activo:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+export async function eliminarActivo(activoId: number) {
+  try {
+    const { error } = await supabase
+      .from('activos')
+      .delete()
+      .eq('id', activoId)
+
+    if (error) throw error
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error eliminando activo:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Tipo para información de tiempo desactivada
+export type TiempoDesactivada = {
+  dias: number
+  horas: number
+  fecha_desactivacion: string
+  motivo: string | null
+  usuario_nombre: string | null
+}
+
+// Tipo extendido de Activo con información de tiempo desactivada
+export type ActivoConEstado = Activo & {
+  dias_desactivada: number | null
+  horas_desactivada: number | null
+  fecha_desactivacion: string | null
+  motivo_desactivacion: string | null
+  usuario_desactivacion: string | null
+}
+
+// Función para obtener activos con tiempo desactivada (usa función de Supabase)
+export async function obtenerActivosConTiempoDesactivada(): Promise<ActivoConEstado[]> {
+  try {
+    const { data, error } = await supabase.rpc('obtener_activos_con_tiempo_desactivada')
+
+    if (error) throw error
+    return data || []
+  } catch (error) {
+    console.error('Error obteniendo activos con tiempo desactivada:', error)
+    return []
+  }
+}
+
+// Función para calcular tiempo desactivada de un activo específico (usa función de Supabase)
+export async function calcularTiempoDesactivada(activoId: number): Promise<TiempoDesactivada | null> {
+  try {
+    const { data, error } = await supabase.rpc('calcular_tiempo_desactivada', {
+      p_activo_id: activoId
+    })
+
+    if (error) throw error
+    if (!data || data.length === 0) return null
+
+    return data[0] as TiempoDesactivada
+  } catch (error) {
+    console.error('Error calculando tiempo desactivada:', error)
+    return null
+  }
+}

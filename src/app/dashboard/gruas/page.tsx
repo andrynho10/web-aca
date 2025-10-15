@@ -2,27 +2,43 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Forklift, Power, PowerOff, Clock, AlertCircle, CheckCircle, Timer, BarChart3 } from 'lucide-react'
+import { Forklift, Power, PowerOff, AlertCircle, CheckCircle, Timer, BarChart3, Plus, Edit, Trash2, X } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
-import { 
-  obtenerActivos, 
-  cambiarEstadoActivo, 
+import {
+  cambiarEstadoActivo,
   obtenerAgregadosDiariosActivos,
   construirResumenUsoActivos,
-  ResumenUsoActivo
+  ResumenUsoActivo,
+  crearActivo,
+  actualizarActivo,
+  eliminarActivo,
+  CrearActivoInput,
+  obtenerActivosConTiempoDesactivada,
+  ActivoConEstado
 } from '@/lib/activos-service'
-import { Activo } from '@/lib/supabase'
+
+type DialogType = 'estado' | 'crear' | 'editar' | 'eliminar' | null
 
 export default function GruasPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [usuario, setUsuario] = useState<any>(null)
-  const [activos, setActivos] = useState<Activo[]>([])
+  const [activos, setActivos] = useState<ActivoConEstado[]>([])
   const [resumenUso, setResumenUso] = useState<ResumenUsoActivo[]>([])
-  const [showDialog, setShowDialog] = useState(false)
-  const [selectedActivo, setSelectedActivo] = useState<Activo | null>(null)
+  const [dialogType, setDialogType] = useState<DialogType>(null)
+  const [selectedActivo, setSelectedActivo] = useState<ActivoConEstado | null>(null)
   const [motivo, setMotivo] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
+
+  // Estado para el formulario de crear/editar
+  const [formData, setFormData] = useState<CrearActivoInput>({
+    nombre: '',
+    modelo: '',
+    tipo: '',
+    codigo_qr: '',
+    es_operativa: true,
+    horometro_actual: null
+  })
 
   const resumenPorActivo = useMemo(() => {
     const map = new Map<number, ResumenUsoActivo>()
@@ -69,7 +85,7 @@ export default function GruasPage() {
 
   async function cargarActivos() {
     const [activosData, agregadosData] = await Promise.all([
-      obtenerActivos(),
+      obtenerActivosConTiempoDesactivada(),
       obtenerAgregadosDiariosActivos(30)
     ])
 
@@ -77,12 +93,12 @@ export default function GruasPage() {
     setResumenUso(construirResumenUsoActivos(agregadosData))
   }
 
-  async function handleCambiarEstado(activo: Activo, nuevoEstado: boolean) {
+  async function handleCambiarEstado(activo: ActivoConEstado) {
     setSelectedActivo(activo)
-    setShowDialog(true)
+    setDialogType('estado')
   }
 
-  async function confirmarCambio() {
+  async function confirmarCambioEstado() {
     if (!selectedActivo || !usuario) return
 
     setActionLoading(true)
@@ -95,11 +111,108 @@ export default function GruasPage() {
 
     if (result.success) {
       await cargarActivos()
-      setShowDialog(false)
-      setMotivo('')
-      setSelectedActivo(null)
+      cerrarDialogos()
     } else {
       alert('Error al cambiar estado: ' + result.error)
+    }
+
+    setActionLoading(false)
+  }
+
+  function abrirCrearGrua() {
+    setFormData({
+      nombre: '',
+      modelo: '',
+      tipo: '',
+      codigo_qr: '',
+      es_operativa: true,
+      horometro_actual: null
+    })
+    setDialogType('crear')
+  }
+
+  function abrirEditarGrua(activo: ActivoConEstado) {
+    setSelectedActivo(activo)
+    setFormData({
+      nombre: activo.nombre,
+      modelo: activo.modelo,
+      tipo: activo.tipo,
+      codigo_qr: activo.codigo_qr,
+      es_operativa: activo.es_operativa,
+      horometro_actual: activo.horometro_actual
+    })
+    setDialogType('editar')
+  }
+
+  function abrirEliminarGrua(activo: ActivoConEstado) {
+    setSelectedActivo(activo)
+    setDialogType('eliminar')
+  }
+
+  function cerrarDialogos() {
+    setDialogType(null)
+    setSelectedActivo(null)
+    setMotivo('')
+    setFormData({
+      nombre: '',
+      modelo: '',
+      tipo: '',
+      codigo_qr: '',
+      es_operativa: true,
+      horometro_actual: null
+    })
+  }
+
+  async function handleCrearGrua() {
+    if (!formData.nombre || !formData.modelo || !formData.tipo || !formData.codigo_qr) {
+      alert('Por favor completa todos los campos obligatorios')
+      return
+    }
+
+    setActionLoading(true)
+    const result = await crearActivo(formData)
+
+    if (result.success) {
+      await cargarActivos()
+      cerrarDialogos()
+    } else {
+      alert('Error al crear grúa: ' + result.error)
+    }
+
+    setActionLoading(false)
+  }
+
+  async function handleActualizarGrua() {
+    if (!selectedActivo) return
+    if (!formData.nombre || !formData.modelo || !formData.tipo || !formData.codigo_qr) {
+      alert('Por favor completa todos los campos obligatorios')
+      return
+    }
+
+    setActionLoading(true)
+    const result = await actualizarActivo(selectedActivo.id, formData)
+
+    if (result.success) {
+      await cargarActivos()
+      cerrarDialogos()
+    } else {
+      alert('Error al actualizar grúa: ' + result.error)
+    }
+
+    setActionLoading(false)
+  }
+
+  async function handleEliminarGrua() {
+    if (!selectedActivo) return
+
+    setActionLoading(true)
+    const result = await eliminarActivo(selectedActivo.id)
+
+    if (result.success) {
+      await cargarActivos()
+      cerrarDialogos()
+    } else {
+      alert('Error al eliminar grúa: ' + result.error)
     }
 
     setActionLoading(false)
@@ -131,12 +244,21 @@ export default function GruasPage() {
                 {activasCount} operativas | {inactivasCount} inactivas
               </p>
             </div>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-            >
-              Volver al Dashboard
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={abrirCrearGrua}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nueva Grúa
+              </button>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                Volver al Dashboard
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -262,10 +384,15 @@ export default function GruasPage() {
                             )}
                           </span>
 
-                          {activo.es_standby && (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                              <Clock className="w-3 h-3 mr-1" />
-                              Standby
+                          {!activo.es_operativa && activo.dias_desactivada !== null && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
+                              title={`Desactivada el ${new Date(activo.fecha_desactivacion!).toLocaleDateString('es-CL')}${activo.motivo_desactivacion ? ` - ${activo.motivo_desactivacion}` : ''}`}
+                            >
+                              <Timer className="w-3 h-3 mr-1" />
+                              {activo.dias_desactivada > 0
+                                ? `${activo.dias_desactivada}d ${activo.horas_desactivada}h desactivada`
+                                : `${activo.horas_desactivada}h desactivada`
+                              }
                             </span>
                           )}
                         </div>
@@ -299,26 +426,45 @@ export default function GruasPage() {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleCambiarEstado(activo, !activo.es_operativa)}
-                      className={`flex items-center px-4 py-2 rounded-md font-medium ${
-                        activo.es_operativa
-                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                          : 'bg-green-100 text-green-700 hover:bg-green-200'
-                      }`}
-                    >
-                      {activo.es_operativa ? (
-                        <>
-                          <PowerOff className="w-4 h-4 mr-2" />
-                          Desactivar
-                        </>
-                      ) : (
-                        <>
-                          <Power className="w-4 h-4 mr-2" />
-                          Activar
-                        </>
-                      )}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => abrirEditarGrua(activo)}
+                        className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 font-medium"
+                        title="Editar grúa"
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleCambiarEstado(activo)}
+                        className={`flex items-center px-3 py-2 rounded-md font-medium ${
+                          activo.es_operativa
+                            ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                            : 'bg-green-100 text-green-700 hover:bg-green-200'
+                        }`}
+                        title={activo.es_operativa ? 'Desactivar' : 'Activar'}
+                      >
+                        {activo.es_operativa ? (
+                          <>
+                            <PowerOff className="w-4 h-4 mr-1" />
+                            Desactivar
+                          </>
+                        ) : (
+                          <>
+                            <Power className="w-4 h-4 mr-1" />
+                            Activar
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => abrirEliminarGrua(activo)}
+                        className="flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 font-medium"
+                        title="Eliminar grúa"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
@@ -327,14 +473,14 @@ export default function GruasPage() {
         </div>
       </main>
 
-      {/* Dialog de Confirmación */}
-      {showDialog && selectedActivo && (
+      {/* Dialog de Cambio de Estado */}
+      {dialogType === 'estado' && selectedActivo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {selectedActivo.es_operativa ? 'Desactivar' : 'Activar'} Grúa
             </h3>
-            
+
             <p className="text-gray-600 mb-4">
               ¿Estás seguro de que quieres {selectedActivo.es_operativa ? 'desactivar' : 'activar'} la grúa <strong>{selectedActivo.nombre}</strong>?
             </p>
@@ -354,26 +500,187 @@ export default function GruasPage() {
 
             <div className="flex space-x-3">
               <button
-                onClick={() => {
-                  setShowDialog(false)
-                  setMotivo('')
-                  setSelectedActivo(null)
-                }}
+                onClick={cerrarDialogos}
                 disabled={actionLoading}
                 className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
-                onClick={confirmarCambio}
+                onClick={confirmarCambioEstado}
                 disabled={actionLoading}
                 className={`flex-1 px-4 py-2 rounded-md text-white font-medium disabled:opacity-50 ${
                   selectedActivo.es_operativa
-                    ? 'bg-red-600 hover:bg-red-700'
+                    ? 'bg-orange-600 hover:bg-orange-700'
                     : 'bg-green-600 hover:bg-green-700'
                 }`}
               >
                 {actionLoading ? 'Procesando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog de Crear/Editar Grúa */}
+      {(dialogType === 'crear' || dialogType === 'editar') && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {dialogType === 'crear' ? 'Nueva Grúa' : 'Editar Grúa'}
+              </h3>
+              <button
+                onClick={cerrarDialogos}
+                disabled={actionLoading}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Ej: 301"
+                  disabled={actionLoading}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Modelo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.modelo}
+                    onChange={(e) => setFormData({ ...formData, modelo: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: BPT"
+                    disabled={actionLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tipo}
+                    onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: Grúa Horquilla"
+                    disabled={actionLoading}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Código QR <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.codigo_qr}
+                  onChange={(e) => setFormData({ ...formData, codigo_qr: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="TULSA-GH-301"
+                  disabled={actionLoading}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Horómetro Actual (horas)
+                </label>
+                <input
+                  type="number"
+                  value={formData.horometro_actual ?? ''}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    horometro_actual: e.target.value ? Number(e.target.value) : null
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0"
+                  disabled={actionLoading}
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+
+              <div className="flex items-center gap-6">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.es_operativa}
+                    onChange={(e) => setFormData({ ...formData, es_operativa: e.target.checked })}
+                    className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    disabled={actionLoading}
+                  />
+                  <span className="text-sm text-gray-700">Operativa</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={cerrarDialogos}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={dialogType === 'crear' ? handleCrearGrua : handleActualizarGrua}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium"
+              >
+                {actionLoading ? 'Procesando...' : (dialogType === 'crear' ? 'Crear Grúa' : 'Guardar Cambios')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog de Eliminar */}
+      {dialogType === 'eliminar' && selectedActivo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-red-600 mb-4">
+              Eliminar Grúa
+            </h3>
+
+            <p className="text-gray-600 mb-4">
+              ¿Estás seguro de que quieres eliminar la grúa <strong>{selectedActivo.nombre}</strong>?
+            </p>
+
+            <p className="text-sm text-red-600 mb-4">
+              Esta acción no se puede deshacer. Se eliminarán todos los datos asociados a esta grúa.
+            </p>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={cerrarDialogos}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEliminarGrua}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 font-medium"
+              >
+                {actionLoading ? 'Eliminando...' : 'Eliminar'}
               </button>
             </div>
           </div>
