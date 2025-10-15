@@ -1,27 +1,46 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { loginSupervisor } from '@/lib/auth'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [redirectUrl, setRedirectUrl] = useState('/dashboard')
+
+  useEffect(() => {
+    // Obtener parámetro redirect de la URL
+    const params = new URLSearchParams(window.location.search)
+    const redirect = params.get('redirect')
+    if (redirect) {
+      setRedirectUrl(redirect)
+    }
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🔐 Iniciando login...')
     setError('')
     setLoading(true)
 
-    const result = await loginSupervisor(email, password)
+    try {
+      console.log('📧 Email:', email)
+      const result = await loginSupervisor(email, password)
+      console.log('✅ Resultado login:', result)
 
-    if (result.success) {
-      router.push('/dashboard')
-    } else {
-      setError(result.error || 'Error al iniciar sesión')
+      if (result.success) {
+        console.log('🎉 Login exitoso, redirigiendo a:', redirectUrl)
+        // Usar window.location para forzar recarga y que el middleware vea la cookie
+        window.location.href = redirectUrl
+      } else {
+        console.error('❌ Error de login:', result.error)
+        setError(result.error || 'Error al iniciar sesión')
+      }
+    } catch (err) {
+      console.error('💥 Error inesperado:', err)
+      setError('Error inesperado al iniciar sesión')
     }
 
     setLoading(false)

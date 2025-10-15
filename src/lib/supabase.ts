@@ -21,7 +21,6 @@ export interface Activo {
   tipo: string
   codigo_qr: string
   es_operativa: boolean
-  es_standby: boolean
   horometro_actual: number | null
   created_at?: string
 }
