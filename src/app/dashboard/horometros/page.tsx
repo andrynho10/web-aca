@@ -159,6 +159,8 @@ export default function HorometrosPage() {
   .map(c => ({
     nombre: c.activo_nombre,
     horas: c.total_horas_uso,
+    horasRegistradas: c.total_horas_uso_registradas,
+    horasOmitidas: c.total_horas_uso_omitidas,
     problemas: c.porcentaje_problemas
   }))
 
@@ -400,7 +402,7 @@ export default function HorometrosPage() {
                           style: { fontSize: 14, fontWeight: 600 }
                         }}
                       />
-                      <Tooltip 
+                      <Tooltip
                         cursor={{ strokeDasharray: '3 3' }}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
@@ -408,12 +410,20 @@ export default function HorometrosPage() {
                             return (
                               <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
                                 <p className="font-semibold text-gray-900">{data.nombre}</p>
-                                <p className="text-sm text-gray-600">
-                                  Horas de uso: <span className="font-medium text-blue-600">{data.horas}h</span>
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  % Problemas: <span className="font-medium text-red-600">{data.problemas}%</span>
-                                </p>
+                                <div className="mt-2 space-y-1">
+                                  <p className="text-sm text-gray-600">
+                                    Horas registradas: <span className="font-medium text-blue-600">{data.horasRegistradas}h</span>
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    Horas omitidas: <span className="font-medium text-orange-600">{data.horasOmitidas}h</span>
+                                  </p>
+                                  <p className="text-sm text-gray-600 border-t pt-1">
+                                    Total: <span className="font-semibold text-blue-600">{data.horas}h</span>
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    % Problemas: <span className="font-medium text-red-600">{data.problemas}%</span>
+                                  </p>
+                                </div>
                               </div>
                             )
                           }
@@ -480,7 +490,9 @@ export default function HorometrosPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grúa</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Horas Uso</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Horas Registradas</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Horas Omitidas</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Horas</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Inspecciones</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Con Problemas</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">% Problemas</th>
@@ -494,6 +506,12 @@ export default function HorometrosPage() {
                         <tr key={item.activo_id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                             {item.activo_nombre}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-blue-600">
+                            {item.total_horas_uso_registradas}h
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-orange-600">
+                            {item.total_horas_uso_omitidas}h
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold text-blue-600">
                             {item.total_horas_uso}h
@@ -553,9 +571,17 @@ export default function HorometrosPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
                     <div>
-                      <p className="text-gray-500">Horas Uso</p>
+                      <p className="text-gray-500">Horas Registradas</p>
+                      <p className="font-semibold text-blue-600">{item.horas_uso_registradas}h</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Horas Omitidas</p>
+                      <p className="font-semibold text-orange-600">{item.horas_uso_omitidas}h</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Total Horas Uso</p>
                       <p className="font-semibold text-gray-900">{item.horas_uso_total}h</p>
                     </div>
                     <div>
@@ -569,6 +595,18 @@ export default function HorometrosPage() {
                     <div>
                       <p className="text-gray-500">Período</p>
                       <p className="font-semibold text-gray-900">{item.dias_periodo} días</p>
+                    </div>
+                  </div>
+
+                  {/* Indicador de reportes */}
+                  <div className="mt-3 flex items-center gap-4 text-xs text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span>{item.reportes_con_horometro} reportes con horómetro</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                      <span>{item.reportes_sin_horometro} reportes omitidos</span>
                     </div>
                   </div>
 

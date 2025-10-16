@@ -42,6 +42,7 @@ export interface ReporteInspeccion {
   horometro_final: number | null
   horometro_pendiente: boolean
   horas_uso: number | null
+  horas_uso_omitidas: number | null
 }
 
 export interface KPIsDashboard {
