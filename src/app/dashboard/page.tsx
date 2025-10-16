@@ -18,7 +18,7 @@ import {
   FileText
 } from 'lucide-react'
 import { KPICard } from '@/components/KPICard'
-import { getCurrentUser } from '@/lib/auth'
+import { getCurrentUser, logout } from '@/lib/auth'
 import { 
   obtenerKPIs, 
   obtenerTendenciaDiaria,
@@ -373,6 +373,11 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleLogout() {
+    await logout()
+    router.push('/login')
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -470,7 +475,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-end gap-3">
               {/* Botón Cerrar Sesión (solo desktop) */}
               <button
-                onClick={() => router.push('/login')}
+                onClick={handleLogout}
                 className="hidden lg:block px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
               >
                 Cerrar Sesión
@@ -840,8 +845,8 @@ export default function DashboardPage() {
               <div className="pt-4 border-t border-gray-200">
                 <button
                   onClick={() => {
-                    router.push('/login')
                     setMenuMovilAbierto(false)
+                    handleLogout()
                   }}
                   className="w-full flex items-center px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                 >
