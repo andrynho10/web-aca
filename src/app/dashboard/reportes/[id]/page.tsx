@@ -363,13 +363,23 @@ export default function ReporteDetallePage() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-2"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver al Dashboard
-          </button>
+          <div className="flex items-center gap-4 mb-2">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Dashboard
+            </button>
+            <span className="text-gray-300">|</span>
+            <button
+              onClick={() => router.push('/dashboard/reportes')}
+              className="flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver a Reportes
+            </button>
+          </div>
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">Detalle de Inspección</h1>
             <div className="flex items-center gap-3">
