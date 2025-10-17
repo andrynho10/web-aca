@@ -16,15 +16,24 @@ import {
   ChevronUp
 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
-import { 
+import {
   obtenerAnalisisProblemasCriticos,
   obtenerEvolucionProblema,
   obtenerActivosAfectadosPorProblema,
+  obtenerTopGruasProblematicas,
+  obtenerCorrelacionUsoProblemas,
   ProblemaCritico,
   EvolucionProblema,
   ActivoAfectado
 } from '@/lib/problemas-criticos-service'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
+import ExportButton from '@/components/ExportButton'
+import {
+  exportarACSV,
+  exportarAExcelMultiplesHojas,
+  generarNombreArchivo,
+  formatearFechaExcel
+} from '@/lib/export-utils'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export default function ProblemasCriticosPage() {
   const router = useRouter()
@@ -101,6 +110,110 @@ export default function ProblemasCriticosPage() {
   const problemasEmpeorando = problemas.filter(p => p.tendencia === 'EMPEORANDO').length
   const activosConProblemas = new Set(problemas.flatMap(p => p.afecta_activos)).size
 
+  // Funciones de exportación
+  async function exportarAnalisisCompleto() {
+    if (problemasFiltrados.length === 0) {
+      alert('No hay problemas para exportar')
+      return
+    }
+
+    // Obtener datos adicionales
+    const [gruasProblematicas, correlacionUso] = await Promise.all([
+      obtenerTopGruasProblematicas(50, dias),
+      obtenerCorrelacionUsoProblemas(dias)
+    ])
+
+    // Obtener grúas afectadas para todos los problemas
+    const gruasAfectadasPromises = problemasFiltrados.map(p =>
+      obtenerActivosAfectadosPorProblema(p.pregunta_id, dias)
+    )
+    const gruasAfectadasArrays = await Promise.all(gruasAfectadasPromises)
+
+    // HOJA 1: Problemas Detectados
+    const datosProblemasCriticos = problemasFiltrados.map(p => ({
+      'Item/Pregunta': p.texto_pregunta,
+      'Total Evaluaciones': p.total_evaluaciones,
+      'Total Fallos': p.total_fallos,
+      '% Fallo': p.porcentaje_fallo,
+      'Grúas Afectadas': p.afecta_activos,
+      'Fotos Evidencia': p.fotos_evidencia,
+      'Última Ocurrencia': formatearFechaExcel(p.ultima_ocurrencia)
+    }))
+
+    // HOJA 2: Detalle Grúas Afectadas por Problema
+    const datosGruasAfectadas: any[] = []
+    problemasFiltrados.forEach((problema, index) => {
+      const afectadas = gruasAfectadasArrays[index] || []
+      afectadas.forEach(activo => {
+        datosGruasAfectadas.push({
+          'ID Pregunta': problema.pregunta_id,
+          'Problema/Item': problema.texto_pregunta,
+          'ID Grúa': activo.activo_id,
+          'Grúa': activo.activo_nombre,
+          'Evaluaciones': activo.total_evaluaciones,
+          'Fallos': activo.total_fallos,
+          '% Fallo': activo.porcentaje_fallo,
+          'Última Ocurrencia': formatearFechaExcel(activo.ultima_ocurrencia)
+        })
+      })
+    })
+
+    // HOJA 3: Grúas con Problemas
+    const datosRankingGruas = gruasProblematicas.map(grua => ({
+      'ID Grúa': grua.activo_id,
+      'Grúa': grua.activo_nombre,
+      'Total Reportes': grua.total_reportes,
+      'Reportes con Problemas': grua.reportes_con_problemas,
+      '% Reportes con Problemas': grua.porcentaje_problemas,
+      'Score Promedio': grua.score_promedio
+    }))
+
+    // HOJA 4: Uso y Problemas por Grúa
+    const datosCorrelacion = correlacionUso.map(c => ({
+      'ID Grúa': c.activo_id,
+      'Grúa': c.activo_nombre,
+      'Horas Operación Registradas': c.total_horas_uso_registradas,
+      'Horas Operación Omitidas': c.total_horas_uso_omitidas,
+      'Total Horas Operación': c.total_horas_uso,
+      'Total Inspecciones': c.total_inspecciones,
+      'Inspecciones con Problemas': c.inspecciones_con_problemas,
+      '% Problemas': c.porcentaje_problemas,
+      'Promedio Horas Operación entre Inspecciones': c.promedio_horas_por_inspeccion
+    }))
+
+    // Exportar Excel multi-hoja
+    const hojas = [
+      { nombre: 'Problemas', datos: datosProblemasCriticos },
+      { nombre: 'Detalle por Grúa', datos: datosGruasAfectadas.length > 0 ? datosGruasAfectadas : [{ 'Info': 'No hay datos disponibles' }] },
+      { nombre: 'Grúas Problemáticas', datos: datosRankingGruas },
+      { nombre: 'Uso y Problemas', datos: datosCorrelacion.length > 0 ? datosCorrelacion : [{ 'Info': 'No hay datos disponibles' }] }
+    ]
+
+    const nombreArchivo = generarNombreArchivo('problemas_criticos', 'xlsx')
+    exportarAExcelMultiplesHojas(hojas, nombreArchivo)
+  }
+
+  async function exportarProblemasCSV() {
+    if (problemasFiltrados.length === 0) {
+      alert('No hay problemas para exportar')
+      return
+    }
+
+    const datosExport = problemasFiltrados.map(p => ({
+      'ID Pregunta': p.pregunta_id,
+      'Item/Pregunta': p.texto_pregunta,
+      'Total Evaluaciones': p.total_evaluaciones,
+      'Total Fallos': p.total_fallos,
+      '% Fallo': p.porcentaje_fallo,
+      'Cantidad Grúas Afectadas': p.afecta_activos,
+      'Fotos Evidencia': p.fotos_evidencia,
+      'Última Ocurrencia': formatearFechaExcel(p.ultima_ocurrencia)
+    }))
+
+    const nombreArchivo = generarNombreArchivo('problemas', 'csv')
+    exportarACSV(datosExport, nombreArchivo)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -130,8 +243,8 @@ export default function ProblemasCriticosPage() {
               <p className="text-sm text-gray-600">Identificación y seguimiento de fallas recurrentes</p>
             </div>
 
-            {/* Selector de período */}
             <div className="flex items-center gap-3">
+              {/* Selector de período */}
               <label className="text-sm font-medium text-gray-700">Período:</label>
               <select
                 value={dias}
@@ -144,6 +257,22 @@ export default function ProblemasCriticosPage() {
                 <option value="60">Últimos 60 días</option>
                 <option value="90">Últimos 90 días</option>
               </select>
+
+              {/* Botones de exportación */}
+              <ExportButton
+                onExport={exportarAnalisisCompleto}
+                label="Exportar a Excel"
+                variant="primary"
+                icon="excel"
+                disabled={problemasFiltrados.length === 0}
+              />
+              <ExportButton
+                onExport={exportarProblemasCSV}
+                label="Exportar a CSV"
+                variant="secondary"
+                icon="csv"
+                disabled={problemasFiltrados.length === 0}
+              />
             </div>
           </div>
         </div>

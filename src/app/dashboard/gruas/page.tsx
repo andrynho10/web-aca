@@ -16,6 +16,13 @@ import {
   obtenerActivosConTiempoDesactivada,
   ActivoConEstado
 } from '@/lib/activos-service'
+import ExportButton from '@/components/ExportButton'
+import {
+  exportarAExcel,
+  exportarACSV,
+  generarNombreArchivo,
+  formatearFechaExcel
+} from '@/lib/export-utils'
 
 type DialogType = 'estado' | 'crear' | 'editar' | 'eliminar' | null
 
@@ -65,6 +72,73 @@ export default function GruasPage() {
     valor > 0
       ? valor.toLocaleString('es-CL', { minimumFractionDigits: 1 })
       : '0'
+
+  // Funciones de exportación
+  function exportarGruasExcel() {
+    if (activos.length === 0) {
+      alert('No hay grúas para exportar')
+      return
+    }
+
+    const datosExport = activos.map(activo => {
+      const resumen = resumenPorActivo.get(activo.id)
+
+      return {
+        'ID': activo.id,
+        'Nombre': activo.nombre,
+        'Modelo': activo.modelo,
+        'Tipo': activo.tipo,
+        'Código QR': activo.codigo_qr,
+        'Estado': activo.es_operativa ? 'Operativa' : 'Fuera de Servicio',
+        'Horómetro Actual (h)': activo.horometro_actual !== null ? activo.horometro_actual : '-',
+        'Días Desactivada': activo.dias_desactivada !== null ? activo.dias_desactivada : '-',
+        'Horas Desactivada': activo.horas_desactivada !== null ? activo.horas_desactivada : '-',
+        'Fecha Desactivación': activo.fecha_desactivacion ? formatearFechaExcel(activo.fecha_desactivacion) : '-',
+        'Motivo Desactivación': activo.motivo_desactivacion || '-',
+        'Usuario Desactivación': activo.usuario_desactivacion || '-',
+        'Horas Operación 30d': resumen?.horasUso30 ?? 0,
+        'Horas Operación 7d': resumen?.horasUso7 ?? 0,
+        'Inspecciones 30d': resumen?.inspecciones30 ?? 0,
+        'Problemas 30d': resumen?.problemas30 ?? 0
+      }
+    })
+
+    const nombreArchivo = generarNombreArchivo('gruas', 'xlsx')
+    exportarAExcel(datosExport, nombreArchivo, 'Grúas')
+  }
+
+  function exportarGruasCSV() {
+    if (activos.length === 0) {
+      alert('No hay grúas para exportar')
+      return
+    }
+
+    const datosExport = activos.map(activo => {
+      const resumen = resumenPorActivo.get(activo.id)
+
+      return {
+        'ID': activo.id,
+        'Nombre': activo.nombre,
+        'Modelo': activo.modelo,
+        'Tipo': activo.tipo,
+        'Código QR': activo.codigo_qr,
+        'Estado': activo.es_operativa ? 'Operativa' : 'Fuera de Servicio',
+        'Horómetro Actual (h)': activo.horometro_actual !== null ? activo.horometro_actual : '-',
+        'Días Desactivada': activo.dias_desactivada !== null ? activo.dias_desactivada : '-',
+        'Horas Desactivada': activo.horas_desactivada !== null ? activo.horas_desactivada : '-',
+        'Fecha Desactivación': activo.fecha_desactivacion ? formatearFechaExcel(activo.fecha_desactivacion) : '-',
+        'Motivo Desactivación': activo.motivo_desactivacion || '-',
+        'Usuario Desactivación': activo.usuario_desactivacion || '-',
+        'Horas Operación 30d': resumen?.horasUso30 ?? 0,
+        'Horas Operación 7d': resumen?.horasUso7 ?? 0,
+        'Inspecciones 30d': resumen?.inspecciones30 ?? 0,
+        'Problemas 30d': resumen?.problemas30 ?? 0
+      }
+    })
+
+    const nombreArchivo = generarNombreArchivo('gruas', 'csv')
+    exportarACSV(datosExport, nombreArchivo)
+  }
 
   useEffect(() => {
     checkAuth()
@@ -245,6 +319,20 @@ export default function GruasPage() {
               </p>
             </div>
             <div className="flex gap-3">
+              <ExportButton
+                onExport={exportarGruasExcel}
+                label="Exportar a Excel"
+                variant="primary"
+                icon="excel"
+                disabled={activos.length === 0}
+              />
+              <ExportButton
+                onExport={exportarGruasCSV}
+                label="Exportar a CSV"
+                variant="secondary"
+                icon="csv"
+                disabled={activos.length === 0}
+              />
               <button
                 onClick={abrirCrearGrua}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"

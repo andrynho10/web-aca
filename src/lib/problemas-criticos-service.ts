@@ -39,6 +39,27 @@ export interface ActivoAfectado {
   ultima_ocurrencia: string
 }
 
+export interface GruaProblematica {
+  activo_id: number
+  activo_nombre: string
+  total_reportes: number
+  reportes_con_problemas: number
+  porcentaje_problemas: number
+  score_promedio: number
+}
+
+export interface CorrelacionUsoProblemas {
+  activo_id: number
+  activo_nombre: string
+  total_horas_uso_registradas: number
+  total_horas_uso_omitidas: number
+  total_horas_uso: number
+  total_inspecciones: number
+  inspecciones_con_problemas: number
+  porcentaje_problemas: number
+  promedio_horas_por_inspeccion: number
+}
+
 export async function obtenerAnalisisProblemasCriticos(dias: number = 30) {
   try {
     const { data, error } = await supabase.rpc('obtener_analisis_problemas_criticos', { 
@@ -85,15 +106,44 @@ export async function obtenerEvolucionProblema(preguntaId: number, dias: number 
 
 export async function obtenerActivosAfectadosPorProblema(preguntaId: number, dias: number = 30) {
   try {
-    const { data, error } = await supabase.rpc('obtener_activos_afectados_por_problema', { 
+    const { data, error } = await supabase.rpc('obtener_activos_afectados_por_problema', {
       pregunta_id_param: preguntaId,
-      dias_periodo: dias 
+      dias_periodo: dias
     })
-    
+
     if (error) throw error
     return data as ActivoAfectado[]
   } catch (error) {
     console.error('Error obteniendo activos afectados:', error)
+    return []
+  }
+}
+
+export async function obtenerTopGruasProblematicas(limite: number = 20, dias: number = 30) {
+  try {
+    const { data, error } = await supabase.rpc('obtener_top_gruas_problematicas', {
+      limite,
+      dias
+    })
+
+    if (error) throw error
+    return data as GruaProblematica[]
+  } catch (error) {
+    console.error('Error obteniendo grúas problemáticas:', error)
+    return []
+  }
+}
+
+export async function obtenerCorrelacionUsoProblemas(dias: number = 90) {
+  try {
+    const { data, error } = await supabase.rpc('obtener_correlacion_horometro_problemas_v2', {
+      p_dias: dias
+    })
+
+    if (error) throw error
+    return data as CorrelacionUsoProblemas[]
+  } catch (error) {
+    console.error('Error obteniendo correlación uso-problemas:', error)
     return []
   }
 }
