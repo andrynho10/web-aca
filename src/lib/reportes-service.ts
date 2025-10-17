@@ -23,7 +23,15 @@ export interface ReporteDetalle {
     tipo: string
   }
   usuario: {
+    id: string
     nombre_completo: string
+    rol: string
+    created_at: string | null
+    rut: string | null
+    id_alternativo: string | null
+    centro_costo: string | null
+    fecha_ingreso: string | null
+    cargo: string | null
   }
   respuestas: Array<{
     id: number
@@ -50,7 +58,7 @@ export async function obtenerReporteDetalle(reporteId: string): Promise<ReporteD
       .select(`
         *,
         activo:activos!inner(nombre, modelo, tipo),
-        usuario:usuarios!inner(nombre_completo),
+        usuario:usuarios!inner(id, nombre_completo, rol, created_at, rut, id_alternativo, centro_costo, fecha_ingreso, cargo),
         respuestas:respuestas_reporte(
           id,
           pregunta_id,
@@ -90,7 +98,7 @@ export async function obtenerReportesConFiltros(
       .select(`
         *,
         activo:activos!inner(nombre, modelo),
-        usuario:usuarios!inner(nombre_completo)
+        usuario:usuarios!inner(id, nombre_completo, rol, created_at, rut, id_alternativo, centro_costo, fecha_ingreso, cargo)
       `)
       .order('timestamp_completado', { ascending: false })
 

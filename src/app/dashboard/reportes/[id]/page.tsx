@@ -17,6 +17,16 @@ import {
 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { obtenerReporteDetalle, ReporteDetalle } from '@/lib/reportes-service'
+import ExportButton from '@/components/ExportButton'
+import {
+  exportarAExcelMultiplesHojas,
+  exportarACSV,
+  generarNombreArchivo,
+  formatearFechaExcel,
+  formatearFechaSoloExcel,
+  formatearPorcentaje,
+  calcularAntiguedad
+} from '@/lib/export-utils'
 
 export default function ReporteDetallePage() {
   const router = useRouter()
@@ -66,6 +76,240 @@ export default function ReporteDetallePage() {
       console.error('Error descargando imagen:', error)
       alert('Error al descargar la imagen')
     }
+  }
+
+  async function exportarReporteCSV() {
+    if (!reporte) {
+      alert('No hay reporte para exportar')
+      return
+    }
+
+    // Formato CSV: Una fila por respuesta con todos los datos
+    const datosCSV = reporte.respuestas.map((resp) => ({
+      'ID Reporte': reporte.id,
+      'Fecha/Hora Completado': formatearFechaExcel(reporte.timestamp_completado),
+      'Duración (min)': reporte.duracion_minutos,
+      'Turno': reporte.turno ? `Turno ${reporte.turno}` : '-',
+      'Grúa': reporte.activo.nombre,
+      'Modelo Grúa': reporte.activo.modelo,
+      'Tipo Grúa': reporte.activo.tipo,
+      'Operador': reporte.usuario.nombre_completo,
+      'RUT Operador': reporte.usuario.rut || '-',
+      'ID Alternativo': reporte.usuario.id_alternativo || '-',
+      'Centro Costo': reporte.usuario.centro_costo || '-',
+      'Cargo': reporte.usuario.cargo || '-',
+      'Fecha Ingreso': formatearFechaSoloExcel(reporte.usuario.fecha_ingreso),
+      'Antigüedad': calcularAntiguedad(reporte.usuario.fecha_ingreso),
+      'Horómetro Inicial': reporte.horometro_inicial !== null ? `${reporte.horometro_inicial}h` : '-',
+      'Horómetro Final': reporte.horometro_final !== null ? `${reporte.horometro_final}h` : '-',
+      'Horas Uso': reporte.horas_uso !== null ? `${reporte.horas_uso}h` : '-',
+      'Score': formatearPorcentaje(reporte.score_cumplimiento, 2),
+      'Categoría': resp.pregunta.categoria.nombre,
+      'Orden Pregunta': resp.pregunta.orden,
+      'Pregunta': resp.pregunta.texto,
+      'Respuesta': resp.respuesta ? 'BUENO' : 'MALO',
+      'Comentario': resp.comentario || '-',
+      'Cantidad Fotos': resp.fotos?.length || 0,
+      'URLs Fotos': resp.fotos?.length > 0
+        ? resp.fotos.map(f => f.url_storage).join(' | ')
+        : '-'
+    })).sort((a, b) => a['Orden Pregunta'] - b['Orden Pregunta'])
+
+    const nombreArchivo = generarNombreArchivo(`reporte_${reporte.activo.nombre}_${reporte.id.substring(0, 8)}`, 'csv')
+    exportarACSV(datosCSV, nombreArchivo)
+  }
+
+  async function exportarReporteCompleto() {
+    if (!reporte) {
+      alert('No hay reporte para exportar')
+      return
+    }
+
+    // Hoja 1: Información General
+    const infoGeneral = [
+      {
+        'Campo': 'ID Reporte',
+        'Valor': reporte.id
+      },
+      {
+        'Campo': 'Fecha/Hora Completado',
+        'Valor': formatearFechaExcel(reporte.timestamp_completado)
+      },
+      {
+        'Campo': 'Fecha/Hora Inicio',
+        'Valor': formatearFechaExcel(reporte.timestamp_inicio)
+      },
+      {
+        'Campo': 'Duración',
+        'Valor': `${reporte.duracion_minutos} minutos`
+      },
+      {
+        'Campo': 'Turno',
+        'Valor': reporte.turno ? `Turno ${reporte.turno}` : '-'
+      },
+      {
+        'Campo': '',
+        'Valor': ''
+      },
+      {
+        'Campo': 'GRÚA',
+        'Valor': ''
+      },
+      {
+        'Campo': 'Nombre',
+        'Valor': reporte.activo.nombre
+      },
+      {
+        'Campo': 'Modelo',
+        'Valor': reporte.activo.modelo
+      },
+      {
+        'Campo': 'Tipo',
+        'Valor': reporte.activo.tipo
+      },
+      {
+        'Campo': '',
+        'Valor': ''
+      },
+      {
+        'Campo': 'OPERADOR',
+        'Valor': ''
+      },
+      {
+        'Campo': 'ID Usuario',
+        'Valor': reporte.usuario.id
+      },
+      {
+        'Campo': 'Nombre Completo',
+        'Valor': reporte.usuario.nombre_completo
+      },
+      {
+        'Campo': 'Rol',
+        'Valor': reporte.usuario.rol
+      },
+      {
+        'Campo': 'RUT',
+        'Valor': reporte.usuario.rut || '-'
+      },
+      {
+        'Campo': 'ID Alternativo',
+        'Valor': reporte.usuario.id_alternativo || '-'
+      },
+      {
+        'Campo': 'Centro de Costo',
+        'Valor': reporte.usuario.centro_costo || '-'
+      },
+      {
+        'Campo': 'Cargo',
+        'Valor': reporte.usuario.cargo || '-'
+      },
+      {
+        'Campo': 'Fecha Ingreso',
+        'Valor': formatearFechaSoloExcel(reporte.usuario.fecha_ingreso)
+      },
+      {
+        'Campo': 'Antigüedad',
+        'Valor': calcularAntiguedad(reporte.usuario.fecha_ingreso)
+      },
+      {
+        'Campo': 'Fecha Creación Usuario',
+        'Valor': formatearFechaExcel(reporte.usuario.created_at)
+      },
+      {
+        'Campo': '',
+        'Valor': ''
+      },
+      {
+        'Campo': 'HORÓMETROS',
+        'Valor': ''
+      },
+      {
+        'Campo': 'Horómetro Inicial',
+        'Valor': reporte.horometro_inicial !== null ? `${reporte.horometro_inicial}h` : '-'
+      },
+      {
+        'Campo': 'Horómetro Final',
+        'Valor': reporte.horometro_final !== null ? `${reporte.horometro_final}h` : '-'
+      },
+      {
+        'Campo': 'Horas de Uso',
+        'Valor': reporte.horas_uso !== null ? `${reporte.horas_uso}h` : '-'
+      },
+      {
+        'Campo': '',
+        'Valor': ''
+      },
+      {
+        'Campo': 'RESULTADOS',
+        'Valor': ''
+      },
+      {
+        'Campo': 'Score de Cumplimiento',
+        'Valor': formatearPorcentaje(reporte.score_cumplimiento, 2)
+      },
+      {
+        'Campo': 'Total Items',
+        'Valor': reporte.total_respuestas.toString()
+      },
+      {
+        'Campo': 'Items Buenos',
+        'Valor': (reporte.total_respuestas - reporte.respuestas_malas).toString()
+      },
+      {
+        'Campo': 'Items Malos',
+        'Valor': reporte.respuestas_malas.toString()
+      },
+      {
+        'Campo': 'Tiene Problemas',
+        'Valor': reporte.tiene_problemas ? 'Sí' : 'No'
+      }
+    ]
+
+    // Hoja 2: Respuestas Detalladas
+    const respuestasDetalladas = reporte.respuestas.map((resp) => ({
+      'Categoría': resp.pregunta.categoria.nombre,
+      'Orden': resp.pregunta.orden,
+      'Pregunta': resp.pregunta.texto,
+      'Respuesta': resp.respuesta ? 'BUENO' : 'MALO',
+      'Comentario': resp.comentario || '-',
+      'Cantidad Fotos': resp.fotos?.length || 0,
+      'URLs Fotos': resp.fotos?.length > 0
+        ? resp.fotos.map(f => f.url_storage).join(' | ')
+        : '-'
+    })).sort((a, b) => a.Orden - b.Orden)
+
+    // Hoja 3: Resumen por Categoría
+    const respuestasPorCategoria = reporte.respuestas.reduce((acc, resp) => {
+      const categoria = resp.pregunta.categoria.nombre
+      if (!acc[categoria]) {
+        acc[categoria] = { total: 0, buenas: 0, malas: 0 }
+      }
+      acc[categoria].total++
+      if (resp.respuesta) {
+        acc[categoria].buenas++
+      } else {
+        acc[categoria].malas++
+      }
+      return acc
+    }, {} as Record<string, { total: number; buenas: number; malas: number }>)
+
+    const resumenPorCategoria = Object.entries(respuestasPorCategoria).map(([categoria, stats]) => ({
+      'Categoría': categoria,
+      'Total Preguntas': stats.total,
+      'Buenas': stats.buenas,
+      'Malas': stats.malas,
+      '% Cumplimiento': formatearPorcentaje((stats.buenas / stats.total) * 100, 1)
+    }))
+
+    // Exportar con múltiples hojas
+    const hojas = [
+      { nombre: 'Información General', datos: infoGeneral },
+      { nombre: 'Respuestas Detalladas', datos: respuestasDetalladas },
+      { nombre: 'Resumen por Categoría', datos: resumenPorCategoria }
+    ]
+
+    const nombreArchivo = generarNombreArchivo(`reporte_${reporte.activo.nombre}_${reporte.id.substring(0, 8)}`, 'xlsx')
+    exportarAExcelMultiplesHojas(hojas, nombreArchivo)
   }
 
   if (loading) {
@@ -126,7 +370,23 @@ export default function ReporteDetallePage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver al Dashboard
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Detalle de Inspección</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">Detalle de Inspección</h1>
+            <div className="flex items-center gap-3">
+              <ExportButton
+                onExport={exportarReporteCompleto}
+                label="Exportar a Excel"
+                variant="primary"
+                icon="excel"
+              />
+              <ExportButton
+                onExport={exportarReporteCSV}
+                label="Exportar a CSV"
+                variant="secondary"
+                icon="csv"
+              />
+            </div>
+          </div>
         </div>
       </header>
 

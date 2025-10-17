@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Clock, 
-  User, 
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  User,
   Forklift,
   AlertTriangle,
   CheckCircle,
@@ -17,6 +17,16 @@ import { getCurrentUser } from '@/lib/auth'
 import { obtenerReportesConFiltros } from '@/lib/reportes-service'
 import { obtenerActivos } from '@/lib/activos-service'
 import { Activo, supabase } from '@/lib/supabase'
+import ExportButton from '@/components/ExportButton'
+import {
+  exportarAExcel,
+  exportarACSV,
+  generarNombreArchivo,
+  formatearFechaExcel,
+  formatearFechaSoloExcel,
+  formatearPorcentaje,
+  calcularAntiguedad
+} from '@/lib/export-utils'
 
 type ReportesFiltroOverrides = {
   fechaDesde?: string
@@ -236,6 +246,80 @@ async function cargarActivos() {
     })
   }
 
+  async function exportarReportesExcel() {
+    if (reportesFiltrados.length === 0) {
+      alert('No hay reportes para exportar')
+      return
+    }
+
+    const datosExport = reportesFiltrados.map(reporte => ({
+      'ID Reporte': reporte.id,
+      'Fecha/Hora Completado': formatearFechaExcel(reporte.timestamp_completado),
+      'Grúa': reporte.activo?.nombre || '-',
+      'Modelo Grúa': reporte.activo?.modelo || '-',
+      'ID Usuario': reporte.usuario?.id || '-',
+      'Operador': reporte.usuario?.nombre_completo || '-',
+      'Rol': reporte.usuario?.rol || '-',
+      'RUT Operador': reporte.usuario?.rut || '-',
+      'ID Alternativo': reporte.usuario?.id_alternativo || '-',
+      'Centro Costo': reporte.usuario?.centro_costo || '-',
+      'Cargo': reporte.usuario?.cargo || '-',
+      'Fecha Ingreso': formatearFechaSoloExcel(reporte.usuario?.fecha_ingreso),
+      'Antigüedad': calcularAntiguedad(reporte.usuario?.fecha_ingreso),
+      'Fecha Creación Usuario': formatearFechaExcel(reporte.usuario?.created_at),
+      'Turno': reporte.turno ? `Turno ${reporte.turno}` : '-',
+      'Duración (min)': reporte.duracion_minutos,
+      'Score': formatearPorcentaje(reporte.score_cumplimiento, 2),
+      'Total Items': reporte.total_respuestas,
+      'Items Malos': reporte.respuestas_malas,
+      'Tiene Problemas': reporte.tiene_problemas ? 'Sí' : 'No',
+      'Horómetro Inicial': reporte.horometro_inicial !== null ? `${reporte.horometro_inicial}h` : '-',
+      'Horómetro Final': reporte.horometro_final !== null ? `${reporte.horometro_final}h` : '-',
+      'Horas Uso': reporte.horas_uso !== null ? `${reporte.horas_uso}h` : '-',
+      'Horas Uso Omitidas': reporte.horometro_inicial !== null && reporte.horas_uso === null ? 'Sí' : 'No'
+    }))
+
+    const nombreArchivo = generarNombreArchivo('reportes', 'xlsx')
+    exportarAExcel(datosExport, nombreArchivo, 'Reportes')
+  }
+
+  async function exportarReportesCSV() {
+    if (reportesFiltrados.length === 0) {
+      alert('No hay reportes para exportar')
+      return
+    }
+
+    const datosExport = reportesFiltrados.map(reporte => ({
+      'ID Reporte': reporte.id,
+      'Fecha/Hora Completado': formatearFechaExcel(reporte.timestamp_completado),
+      'Grúa': reporte.activo?.nombre || '-',
+      'Modelo Grúa': reporte.activo?.modelo || '-',
+      'ID Usuario': reporte.usuario?.id || '-',
+      'Operador': reporte.usuario?.nombre_completo || '-',
+      'Rol': reporte.usuario?.rol || '-',
+      'RUT Operador': reporte.usuario?.rut || '-',
+      'ID Alternativo': reporte.usuario?.id_alternativo || '-',
+      'Centro Costo': reporte.usuario?.centro_costo || '-',
+      'Cargo': reporte.usuario?.cargo || '-',
+      'Fecha Ingreso': formatearFechaSoloExcel(reporte.usuario?.fecha_ingreso),
+      'Antigüedad': calcularAntiguedad(reporte.usuario?.fecha_ingreso),
+      'Fecha Creación Usuario': formatearFechaExcel(reporte.usuario?.created_at),
+      'Turno': reporte.turno ? `Turno ${reporte.turno}` : '-',
+      'Duración (min)': reporte.duracion_minutos,
+      'Score': formatearPorcentaje(reporte.score_cumplimiento, 2),
+      'Total Items': reporte.total_respuestas,
+      'Items Malos': reporte.respuestas_malas,
+      'Tiene Problemas': reporte.tiene_problemas ? 'Sí' : 'No',
+      'Horómetro Inicial': reporte.horometro_inicial !== null ? `${reporte.horometro_inicial}h` : '-',
+      'Horómetro Final': reporte.horometro_final !== null ? `${reporte.horometro_final}h` : '-',
+      'Horas Uso': reporte.horas_uso !== null ? `${reporte.horas_uso}h` : '-',
+      'Horas Uso Omitidas': reporte.horometro_inicial !== null && reporte.horas_uso === null ? 'Sí' : 'No'
+    }))
+
+    const nombreArchivo = generarNombreArchivo('reportes', 'csv')
+    exportarACSV(datosExport, nombreArchivo)
+  }
+
   // Filtrar por búsqueda local
   const reportesFiltrados = reportes.filter(reporte => {
     if (!busqueda) return true
@@ -282,6 +366,22 @@ async function cargarActivos() {
                   </span>
                 )}
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <ExportButton
+                onExport={exportarReportesExcel}
+                label="Exportar a Excel"
+                variant="primary"
+                icon="excel"
+                disabled={reportesFiltrados.length === 0}
+              />
+              <ExportButton
+                onExport={exportarReportesCSV}
+                label="Exportar a CSV"
+                variant="secondary"
+                icon="csv"
+                disabled={reportesFiltrados.length === 0}
+              />
             </div>
           </div>
         </div>

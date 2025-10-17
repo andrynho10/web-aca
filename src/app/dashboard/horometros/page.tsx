@@ -14,7 +14,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
-import { 
+import {
   obtenerCorrelacionHorometroProblemas,
   obtenerEficienciaHorometro,
   obtenerEstadoHorometros,
@@ -25,6 +25,12 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, Cell } from 'recharts'
 import { obtenerOperadoresHorometrosPendientes, OperadorHorometroPendiente } from '@/lib/horometros-service'
 import { supabase } from '@/lib/supabase'
+import ExportButton from '@/components/ExportButton'
+import {
+  exportarAExcel,
+  generarNombreArchivo,
+  formatearFechaExcel
+} from '@/lib/export-utils'
 
 export default function HorometrosPage() {
   const router = useRouter()
@@ -140,6 +146,36 @@ export default function HorometrosPage() {
         setActualizando(false)
       }
     }
+  }
+
+  async function exportarOperadoresPendientes() {
+    if (operadoresPendientes.length === 0) {
+      alert('No hay operadores pendientes para exportar')
+      return
+    }
+
+    const datosExport = operadoresPendientes.flatMap(operador =>
+      operador.reportes_pendientes.map(reporte => {
+        const diasPendiente = Math.floor(reporte.dias_pendiente)
+        const esUrgente = diasPendiente > 2
+
+        return {
+          'Operador': operador.usuario_nombre,
+          'RUT Operador': operador.usuario_rut,
+          'Total Pendientes': operador.total_pendientes,
+          'Grúa': reporte.activo_nombre,
+          'Turno': `Turno ${reporte.turno}`,
+          'Fecha/Hora Inicio': formatearFechaExcel(reporte.timestamp_inicio),
+          'Fecha/Hora Completado': formatearFechaExcel(reporte.timestamp_completado),
+          'Horómetro Inicial': reporte.horometro_inicial ? `${reporte.horometro_inicial}h` : '-',
+          'Días Pendiente': diasPendiente,
+          'Estado': esUrgente ? 'URGENTE' : 'Pendiente'
+        }
+      })
+    )
+
+    const nombreArchivo = generarNombreArchivo('operadores_horometros_pendientes', 'xlsx')
+    exportarAExcel(datosExport, nombreArchivo, 'Pendientes')
   }
 
   if (loading) {
@@ -279,9 +315,19 @@ export default function HorometrosPage() {
                 Operadores con Horómetros Pendientes
                 </h2>
             </div>
-            <span className="text-2xl font-bold text-orange-600">
+            <div className="flex items-center gap-4">
+                <span className="text-2xl font-bold text-orange-600">
                 {operadoresPendientes.reduce((acc, op) => acc + op.total_pendientes, 0)}
-            </span>
+                </span>
+                {operadoresPendientes.length > 0 && (
+                <ExportButton
+                    onExport={exportarOperadoresPendientes}
+                    label="Exportar"
+                    variant="primary"
+                    icon="excel"
+                />
+                )}
+            </div>
             </div>
         </div>
         
