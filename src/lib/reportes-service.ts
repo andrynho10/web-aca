@@ -113,7 +113,10 @@ export async function obtenerReportesConFiltros(
       }
 
       if (fechaHasta) {
-        query = query.lte('timestamp_completado', fechaHasta)
+        // Agregar un día completo para incluir todo el día "hasta"
+        const fechaHastaFin = new Date(fechaHasta)
+        fechaHastaFin.setDate(fechaHastaFin.getDate() + 1)
+        query = query.lt('timestamp_completado', fechaHastaFin.toISOString())
       }
     }
 

@@ -47,9 +47,8 @@ export default function HeatmapPage() {
 
   function handleCellClick(activoId: number, fecha: string) {
     // Navegar a lista de reportes filtrada por grúa y fecha
-    const fechaInicio = fecha
-    const fechaFin = new Date(new Date(fecha).getTime() + 86400000).toISOString().split('T')[0]
-    router.push(`/dashboard/reportes?activo=${activoId}&desde=${fechaInicio}&hasta=${fechaFin}`)
+    // Ahora usamos la misma fecha para inicio y fin, ya que el filtro incluye todo el día
+    router.push(`/dashboard/reportes?activo=${activoId}&desde=${fecha}&hasta=${fecha}`)
   }
 
   if (loading) {

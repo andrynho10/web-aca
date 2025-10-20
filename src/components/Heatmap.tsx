@@ -20,9 +20,9 @@ interface HeatmapProps {
 export function Heatmap({ data, onCellClick }: HeatmapProps) {
   // Obtener grúas únicas
   const gruas = Array.from(new Set(data.map(d => d.activo_nombre))).sort()
-  
-  // Obtener fechas únicas (últimos 30 días)
-  const fechas = Array.from(new Set(data.map(d => d.fecha))).sort().reverse().slice(0, 30)
+
+  // Obtener fechas únicas ordenadas cronológicamente (más antigua a la izquierda)
+  const fechas = Array.from(new Set(data.map(d => d.fecha))).sort().slice(-30)
 
   // Crear matriz de datos
   const matriz: Record<string, Record<string, HeatmapData | null>> = {}
@@ -64,15 +64,17 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
             <div className="h-12 flex items-center justify-center border-b border-gray-200 font-semibold text-gray-700">
               Grúas
             </div>
-            {gruas.map(grua => (
-              <div
-                key={grua}
-                className="h-12 flex items-center px-3 border-b border-gray-200 text-sm font-medium text-gray-900"
-              >
-                <Forklift className="w-4 h-4 mr-2 text-gray-400" />
-                {grua}
-              </div>
-            ))}
+            <div className="flex flex-col gap-1 py-1">
+              {gruas.map(grua => (
+                <div
+                  key={grua}
+                  className="h-12 flex items-center px-3 text-sm font-medium text-gray-900"
+                >
+                  <Forklift className="w-4 h-4 mr-2 text-gray-400" />
+                  {grua}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Columnas de fechas */}
@@ -84,7 +86,7 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
                   day: '2-digit',
                   month: 'short'
                 })
-                
+
                 return (
                   <div key={fecha} className="flex-shrink-0" style={{ width: '60px' }}>
                     {/* Header fecha */}
@@ -93,12 +95,12 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
                         {fechaCorta}
                       </div>
                     </div>
-                    
+
                     {/* Celdas de cada grúa */}
                     {gruas.map(grua => {
                       const celda = matriz[grua][fecha]
                       const colorClass = getColorByScore(celda?.score_promedio || null)
-                      
+
                       return (
                         <button
                           key={`${grua}-${fecha}`}
@@ -113,7 +115,7 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
                               </span>
                             </div>
                           )}
-                          
+
                           {/* Tooltip */}
                           {celda && (
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-10">
