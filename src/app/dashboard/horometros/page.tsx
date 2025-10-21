@@ -28,8 +28,11 @@ import { supabase } from '@/lib/supabase'
 import ExportButton from '@/components/ExportButton'
 import {
   exportarAExcel,
+  exportarACSV,
+  exportarAExcelMultiplesHojas,
   generarNombreArchivo,
-  formatearFechaExcel
+  formatearFechaExcel,
+  formatearPorcentaje
 } from '@/lib/export-utils'
 
 export default function HorometrosPage() {
@@ -41,7 +44,7 @@ export default function HorometrosPage() {
   const [estado, setEstado] = useState<EstadoHorometro[]>([])
   const [dias, setDias] = useState(90)
   const [operadoresPendientes, setOperadoresPendientes] = useState<OperadorHorometroPendiente[]>([])
-  const [usuario, setUsuario] = useState<any>(null)
+  const [usuario, setUsuario] = useState<{ rol: string } | null>(null)
 
   // Verificar autenticación al montar
   useEffect(() => {
@@ -148,7 +151,8 @@ export default function HorometrosPage() {
     }
   }
 
-  async function exportarOperadoresPendientes() {
+  // Funciones de exportación
+  function exportarOperadoresPendientesExcel() {
     if (operadoresPendientes.length === 0) {
       alert('No hay operadores pendientes para exportar')
       return
@@ -161,7 +165,7 @@ export default function HorometrosPage() {
 
         return {
           'Operador': operador.usuario_nombre,
-          'RUT Operador': operador.usuario_rut,
+          'RUT Operador': operador.usuario_rut || '-',
           'Total Pendientes': operador.total_pendientes,
           'Grúa': reporte.activo_nombre,
           'Turno': `Turno ${reporte.turno}`,
@@ -176,6 +180,139 @@ export default function HorometrosPage() {
 
     const nombreArchivo = generarNombreArchivo('operadores_horometros_pendientes', 'xlsx')
     exportarAExcel(datosExport, nombreArchivo, 'Pendientes')
+  }
+
+  function exportarOperadoresPendientesCSV() {
+    if (operadoresPendientes.length === 0) {
+      alert('No hay operadores pendientes para exportar')
+      return
+    }
+
+    const datosExport = operadoresPendientes.flatMap(operador =>
+      operador.reportes_pendientes.map(reporte => {
+        const diasPendiente = Math.floor(reporte.dias_pendiente)
+        const esUrgente = diasPendiente > 2
+
+        return {
+          'Operador': operador.usuario_nombre,
+          'RUT Operador': operador.usuario_rut || '-',
+          'Total Pendientes': operador.total_pendientes,
+          'Grúa': reporte.activo_nombre,
+          'Turno': `Turno ${reporte.turno}`,
+          'Fecha/Hora Inicio': formatearFechaExcel(reporte.timestamp_inicio),
+          'Fecha/Hora Completado': formatearFechaExcel(reporte.timestamp_completado),
+          'Horómetro Inicial': reporte.horometro_inicial ? `${reporte.horometro_inicial}h` : '-',
+          'Días Pendiente': diasPendiente,
+          'Estado': esUrgente ? 'URGENTE' : 'Pendiente'
+        }
+      })
+    )
+
+    const nombreArchivo = generarNombreArchivo('operadores_horometros_pendientes', 'csv')
+    exportarACSV(datosExport, nombreArchivo)
+  }
+
+  function exportarAnalisisCompletoExcel() {
+    // Hoja 1: Correlación Horómetro-Problemas
+    // Campos según Supabase: activo_nombre, total_horas_uso_registradas, total_horas_uso_omitidas,
+    // total_horas_uso, total_inspecciones, inspecciones_con_problemas, porcentaje_problemas, promedio_horas_por_inspeccion
+    const datosCorrelacion = correlacion.map(c => {
+      const horasRegistradas = parseFloat(c.total_horas_uso_registradas?.toString() || '0')
+      const horasOmitidas = parseFloat(c.total_horas_uso_omitidas?.toString() || '0')
+      const horasTotal = parseFloat(c.total_horas_uso?.toString() || '0')
+
+      return {
+        'Grúa': c.activo_nombre,
+        'Total Horas Uso': horasTotal.toFixed(2),
+        'Horas Registradas': horasRegistradas.toFixed(2),
+        'Horas Omitidas': horasOmitidas.toFixed(2),
+        '% Horas Omitidas': horasTotal > 0
+          ? formatearPorcentaje((horasOmitidas / horasTotal) * 100, 1)
+          : '0%',
+        'Total Inspecciones': c.total_inspecciones || 0,
+        'Inspecciones con Problemas': c.inspecciones_con_problemas || 0,
+        '% Problemas': formatearPorcentaje(parseFloat(c.porcentaje_problemas?.toString() || '0'), 1),
+        'Promedio Horas/Inspección': parseFloat(c.promedio_horas_por_inspeccion?.toString() || '0').toFixed(2)
+      }
+    })
+
+    // Hoja 2: Eficiencia de Uso
+    // Campos según Supabase: activo_nombre, dias_periodo, horas_uso_registradas, horas_uso_omitidas,
+    // horas_uso_total, horas_disponibles_teoricas, porcentaje_utilizacion, promedio_horas_dia,
+    // reportes_con_horometro, reportes_sin_horometro
+    const datosEficiencia = eficiencia.map(e => {
+      const totalReportes = (e.reportes_con_horometro || 0) + (e.reportes_sin_horometro || 0)
+      const porcentajeCompletitud = totalReportes > 0
+        ? ((e.reportes_con_horometro || 0) / totalReportes * 100)
+        : 0
+
+      return {
+        'Grúa': e.activo_nombre,
+        'Días Período': e.dias_periodo || 0,
+        'Reportes con Horómetro': e.reportes_con_horometro || 0,
+        'Reportes sin Horómetro': e.reportes_sin_horometro || 0,
+        'Total Reportes': totalReportes,
+        '% Completitud Registro': formatearPorcentaje(porcentajeCompletitud, 1),
+        'Horas Uso Registradas': parseFloat(e.horas_uso_registradas?.toString() || '0').toFixed(2),
+        'Horas Uso Omitidas': parseFloat(e.horas_uso_omitidas?.toString() || '0').toFixed(2),
+        'Horas Uso Total': parseFloat(e.horas_uso_total?.toString() || '0').toFixed(2),
+        'Horas Disponibles Teóricas': parseFloat(e.horas_disponibles_teoricas?.toString() || '0').toFixed(2),
+        '% Utilización': formatearPorcentaje(parseFloat(e.porcentaje_utilizacion?.toString() || '0'), 1),
+        'Promedio Horas/Día': parseFloat(e.promedio_horas_dia?.toString() || '0').toFixed(2)
+      }
+    })
+
+    // Hoja 3: Estado Actual
+    // Campos según Supabase: activo_nombre, horometro_actual, fecha_ultimo_reporte,
+    // dias_sin_actualizacion, ultima_grua_operativa
+    const datosEstado = estado.map(e => ({
+      'Grúa': e.activo_nombre,
+      'Horómetro Actual (h)': e.horometro_actual || 'N/A',
+      'Fecha Último Reporte': e.fecha_ultimo_reporte
+        ? formatearFechaExcel(e.fecha_ultimo_reporte)
+        : 'Sin reportes',
+      'Días Sin Actualización': e.dias_sin_actualizacion ?? 'N/A',
+      'Estado Operativo': e.ultima_grua_operativa ? 'Operativa' : 'Inactiva'
+    }))
+
+    const hojas = [
+      { nombre: 'Correlación', datos: datosCorrelacion },
+      { nombre: 'Eficiencia', datos: datosEficiencia },
+      { nombre: 'Estado Actual', datos: datosEstado }
+    ]
+
+    const nombreArchivo = generarNombreArchivo('analisis_horometros_completo', 'xlsx')
+    exportarAExcelMultiplesHojas(hojas, nombreArchivo)
+  }
+
+  function exportarCorrelacionCSV() {
+    if (correlacion.length === 0) {
+      alert('No hay datos de correlación para exportar')
+      return
+    }
+
+    const datosExport = correlacion.map(c => {
+      const horasRegistradas = parseFloat(c.total_horas_uso_registradas?.toString() || '0')
+      const horasOmitidas = parseFloat(c.total_horas_uso_omitidas?.toString() || '0')
+      const horasTotal = parseFloat(c.total_horas_uso?.toString() || '0')
+
+      return {
+        'Grúa': c.activo_nombre,
+        'Total Horas Uso': horasTotal.toFixed(2),
+        'Horas Registradas': horasRegistradas.toFixed(2),
+        'Horas Omitidas': horasOmitidas.toFixed(2),
+        '% Horas Omitidas': horasTotal > 0
+          ? formatearPorcentaje((horasOmitidas / horasTotal) * 100, 1)
+          : '0%',
+        'Total Inspecciones': c.total_inspecciones || 0,
+        'Inspecciones con Problemas': c.inspecciones_con_problemas || 0,
+        '% Problemas': formatearPorcentaje(parseFloat(c.porcentaje_problemas?.toString() || '0'), 1),
+        'Promedio Horas/Inspección': parseFloat(c.promedio_horas_por_inspeccion?.toString() || '0').toFixed(2)
+      }
+    })
+
+    const nombreArchivo = generarNombreArchivo('correlacion_horometros', 'csv')
+    exportarACSV(datosExport, nombreArchivo)
   }
 
   if (loading) {
@@ -226,7 +363,7 @@ export default function HorometrosPage() {
               </div>
             </div>
 
-            {/* Selector de período */}
+            {/* Selector de período y Exportación */}
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium text-gray-700">Período:</label>
               <select
@@ -239,6 +376,22 @@ export default function HorometrosPage() {
                 <option value="90">Últimos 90 días</option>
                 <option value="180">Últimos 6 meses</option>
               </select>
+
+              {/* Botones de Exportación */}
+              <ExportButton
+                onExport={exportarAnalisisCompletoExcel}
+                label="Exportar Completo"
+                variant="primary"
+                icon="excel"
+                disabled={correlacion.length === 0}
+              />
+              <ExportButton
+                onExport={exportarCorrelacionCSV}
+                label="Exportar CSV"
+                variant="secondary"
+                icon="csv"
+                disabled={correlacion.length === 0}
+              />
             </div>
           </div>
         </div>
@@ -320,12 +473,20 @@ export default function HorometrosPage() {
                 {operadoresPendientes.reduce((acc, op) => acc + op.total_pendientes, 0)}
                 </span>
                 {operadoresPendientes.length > 0 && (
-                <ExportButton
-                    onExport={exportarOperadoresPendientes}
-                    label="Exportar"
-                    variant="primary"
-                    icon="excel"
-                />
+                <>
+                  <ExportButton
+                      onExport={exportarOperadoresPendientesExcel}
+                      label="Exportar Excel"
+                      variant="primary"
+                      icon="excel"
+                  />
+                  <ExportButton
+                      onExport={exportarOperadoresPendientesCSV}
+                      label="Exportar CSV"
+                      variant="secondary"
+                      icon="csv"
+                  />
+                </>
                 )}
             </div>
             </div>
