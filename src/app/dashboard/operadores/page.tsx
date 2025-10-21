@@ -2,15 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  ArrowLeft, 
-  Users, 
-  TrendingUp, 
+import {
+  ArrowLeft,
+  Users,
+  TrendingUp,
   Award,
   Building2,
-  Calendar,
-  Briefcase,
-  IdCard,
   Clock
 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
@@ -123,7 +120,7 @@ export default function OperadoresPage() {
 
               <select
                 value={ordenamiento}
-                onChange={(e) => setOrdenamiento(e.target.value as any)}
+                onChange={(e) => setOrdenamiento(e.target.value as 'inspecciones' | 'score' | 'problemas')}
                 className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
               >
                 <option value="inspecciones">Más Inspecciones</option>
@@ -267,16 +264,13 @@ export default function OperadoresPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inspecciones</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">% Reportes con Problemas</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duración Promedio</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Última Duración</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Última Inspección</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {operadoresOrdenados.map((operador, index) => {
-                  const antiguedad = operador.fecha_ingreso 
-                    ? Math.floor((Date.now() - new Date(operador.fecha_ingreso).getTime()) / (1000 * 60 * 60 * 24 * 365))
-                    : null
-
-                  return (
+                {operadoresOrdenados.map((operador, index) => (
                     <tr key={operador.usuario_id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {index + 1}
@@ -319,6 +313,34 @@ export default function OperadoresPage() {
                           </span>
                         )}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {operador.total_inspecciones === 0 || !operador.duracion_promedio_minutos ? (
+                          <span className="text-gray-400 italic">-</span>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4 text-blue-500" />
+                            <span className="text-gray-900 font-medium">
+                              {operador.duracion_promedio_minutos.toFixed(1)} min
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {operador.total_inspecciones === 0 || !operador.duracion_ultima_inspeccion ? (
+                          <span className="text-gray-400 italic">-</span>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-4 h-4 text-gray-500" />
+                            <span className={`font-medium ${
+                              operador.duracion_ultima_inspeccion <= 10 ? 'text-green-600' :
+                              operador.duracion_ultima_inspeccion <= 20 ? 'text-yellow-600' :
+                              'text-red-600'
+                            }`}>
+                              {operador.duracion_ultima_inspeccion} min
+                            </span>
+                          </div>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {operador.dias_desde_ultima === -1
                           ? <span className="text-gray-400 italic">Sin inspecciones</span>
@@ -328,8 +350,7 @@ export default function OperadoresPage() {
                         }
                       </td>
                     </tr>
-                  )
-                })}
+                ))}
               </tbody>
             </table>
           </div>

@@ -13,6 +13,7 @@ export interface AnalisisOperador {
   porcentaje_problemas: number
   score_promedio: number
   duracion_promedio_minutos: number
+  duracion_ultima_inspeccion: number | null
   ultima_inspeccion: string
   dias_desde_ultima: number
 }
@@ -94,6 +95,7 @@ export async function obtenerTodosLosOperadores(dias: number = 90) {
           porcentaje_problemas: 0,
           score_promedio: 0,
           duracion_promedio_minutos: 0,
+          duracion_ultima_inspeccion: null,
           ultima_inspeccion: '',
           dias_desde_ultima: -1 // -1 indica "sin inspecciones"
         }
