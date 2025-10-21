@@ -17,6 +17,15 @@ import {
   AnalisisOperador,
   AnalisisCentroCosto
 } from '@/lib/operadores-service'
+import ExportButton from '@/components/ExportButton'
+import {
+  exportarAExcel,
+  exportarACSV,
+  generarNombreArchivo,
+  formatearFechaSoloExcel,
+  calcularAntiguedad,
+  formatearPorcentaje
+} from '@/lib/export-utils'
 
 export default function OperadoresPage() {
   const router = useRouter()
@@ -62,6 +71,73 @@ export default function OperadoresPage() {
     setLoading(false)
   }
 
+  // Funciones de exportación
+  function exportarOperadoresExcel() {
+    if (operadores.length === 0) {
+      alert('No hay operadores para exportar')
+      return
+    }
+
+    const datosExport = operadores.map(operador => ({
+      'Nombre Completo': operador.nombre_completo,
+      'RUT': operador.rut || '-',
+      'ID Alternativo': operador.id_alternativo || '-',
+      'Centro de Costo': operador.centro_costo || '-',
+      'Cargo': operador.cargo || '-',
+      'Fecha Ingreso': formatearFechaSoloExcel(operador.fecha_ingreso),
+      'Antigüedad': calcularAntiguedad(operador.fecha_ingreso),
+      'Total Inspecciones': operador.total_inspecciones,
+      'Inspecciones con Problemas': operador.inspecciones_con_problemas,
+      '% Reportes con Problemas': formatearPorcentaje(operador.porcentaje_problemas, 2),
+      'Score Promedio': formatearPorcentaje(operador.score_promedio, 2),
+      'Duración Promedio (min)': operador.duracion_promedio_minutos > 0
+        ? operador.duracion_promedio_minutos.toFixed(2)
+        : '-',
+      'Última Duración (min)': operador.duracion_ultima_inspeccion !== null
+        ? operador.duracion_ultima_inspeccion
+        : '-',
+      'Días Desde Última Inspección': operador.dias_desde_ultima === -1
+        ? 'Sin inspecciones'
+        : Math.floor(operador.dias_desde_ultima)
+    }))
+
+    const nombreArchivo = generarNombreArchivo('operadores', 'xlsx')
+    exportarAExcel(datosExport, nombreArchivo, 'Operadores')
+  }
+
+  function exportarOperadoresCSV() {
+    if (operadores.length === 0) {
+      alert('No hay operadores para exportar')
+      return
+    }
+
+    const datosExport = operadores.map(operador => ({
+      'Nombre Completo': operador.nombre_completo,
+      'RUT': operador.rut || '-',
+      'ID Alternativo': operador.id_alternativo || '-',
+      'Centro de Costo': operador.centro_costo || '-',
+      'Cargo': operador.cargo || '-',
+      'Fecha Ingreso': formatearFechaSoloExcel(operador.fecha_ingreso),
+      'Antigüedad': calcularAntiguedad(operador.fecha_ingreso),
+      'Total Inspecciones': operador.total_inspecciones,
+      'Inspecciones con Problemas': operador.inspecciones_con_problemas,
+      '% Reportes con Problemas': formatearPorcentaje(operador.porcentaje_problemas, 2),
+      'Score Promedio': formatearPorcentaje(operador.score_promedio, 2),
+      'Duración Promedio (min)': operador.duracion_promedio_minutos > 0
+        ? operador.duracion_promedio_minutos.toFixed(2)
+        : '-',
+      'Última Duración (min)': operador.duracion_ultima_inspeccion !== null
+        ? operador.duracion_ultima_inspeccion
+        : '-',
+      'Días Desde Última Inspección': operador.dias_desde_ultima === -1
+        ? 'Sin inspecciones'
+        : Math.floor(operador.dias_desde_ultima)
+    }))
+
+    const nombreArchivo = generarNombreArchivo('operadores', 'csv')
+    exportarACSV(datosExport, nombreArchivo)
+  }
+
   // Ordenar operadores
   const operadoresOrdenados = [...operadores].sort((a, b) => {
     switch (ordenamiento) {
@@ -105,7 +181,7 @@ export default function OperadoresPage() {
               <p className="text-sm text-gray-600">Performance y datos de identificación</p>
             </div>
 
-            {/* Controles */}
+            {/* Controles y Exportación */}
             <div className="flex items-center gap-3">
               <select
                 value={dias}
@@ -127,6 +203,22 @@ export default function OperadoresPage() {
                 <option value="score">Mejor Score</option>
                 <option value="problemas">Menos Problemas</option>
               </select>
+
+              {/* Botones de Exportación */}
+              <ExportButton
+                onExport={exportarOperadoresExcel}
+                label="Exportar a Excel"
+                variant="primary"
+                icon="excel"
+                disabled={operadores.length === 0}
+              />
+              <ExportButton
+                onExport={exportarOperadoresCSV}
+                label="Exportar a CSV"
+                variant="secondary"
+                icon="csv"
+                disabled={operadores.length === 0}
+              />
             </div>
           </div>
         </div>
