@@ -19,8 +19,8 @@ import {
 } from 'lucide-react'
 import { KPICard } from '@/components/KPICard'
 import { getCurrentUser, logout } from '@/lib/auth'
-import { 
-  obtenerKPIs, 
+import {
+  obtenerKPIs,
   obtenerTendenciaDiaria,
   obtenerAnalisisTurnos,
   obtenerTopGruasProblematicas,
@@ -30,6 +30,17 @@ import { KPIsDashboard } from '@/lib/supabase'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { obtenerResumenUsoActivosRPC, ResumenUsoActivo } from '@/lib/activos-service'
+import { obtenerTodosLosOperadores } from '@/lib/operadores-service'
+import { obtenerEstadoHorometros } from '@/lib/horometros-service'
+import { obtenerReportesConFiltros } from '@/lib/reportes-service'
+import ExportButton from '@/components/ExportButton'
+import {
+  exportarAExcelMultiplesHojas,
+  exportarACSV,
+  generarNombreArchivo,
+  formatearFechaExcel,
+  formatearPorcentaje
+} from '@/lib/export-utils'
 
 type ReporteReciente = {
   id: string
@@ -378,6 +389,167 @@ export default function DashboardPage() {
     router.push('/login')
   }
 
+  // Funciones de exportación
+  async function exportarDashboardCompleto() {
+    try {
+      // Calcular fecha hace 90 días
+      const fecha90DiasAtras = new Date()
+      fecha90DiasAtras.setDate(fecha90DiasAtras.getDate() - 90)
+      const fechaDesde = fecha90DiasAtras.toISOString()
+
+      // Obtener todos los datos en paralelo
+      const [
+        reportesData,
+        operadoresData,
+        estadoHorometrosData,
+        kpisData,
+        gruasProblematicasData,
+        problemasData
+      ] = await Promise.all([
+        obtenerReportesConFiltros(fechaDesde),
+        obtenerTodosLosOperadores(90),
+        obtenerEstadoHorometros(),
+        obtenerKPIs(),
+        obtenerTopGruasProblematicas(20, 90),
+        obtenerTopProblemas(90)
+      ])
+
+      // HOJA 1: REPORTES (Prioridad máxima)
+      const reportes = (reportesData || []).map((r: any) => ({
+        'ID Reporte': r.id,
+        'Fecha/Hora Completado': formatearFechaExcel(r.timestamp_completado),
+        'Grúa': r.activo?.nombre || '-',
+        'Operador': r.usuario?.nombre_completo || '-',
+        'RUT Operador': r.usuario?.rut || '-',
+        'Centro de Costo': r.usuario?.centro_costo || '-',
+        'Turno': r.turno ? `Turno ${r.turno}` : '-',
+        'Duración (min)': r.duracion_minutos || 0,
+        'Score (%)': formatearPorcentaje(r.score_cumplimiento || 0, 2),
+        '¿Tiene Problemas?': r.tiene_problemas ? 'Sí' : 'No',
+        'Total Respuestas': r.total_respuestas || 0,
+        'Respuestas Malas': r.respuestas_malas || 0,
+        'Horómetro Inicial (h)': r.horometro_inicial || '-',
+        'Horómetro Final (h)': r.horometro_final || '-',
+        'Horas de Uso': r.horas_uso?.toFixed(2) || '-'
+      }))
+
+      // HOJA 2: KPIs GENERALES
+      const kpisHoja = kpisData ? [{
+        'Reportes Hoy': kpisData.total_reportes_hoy || 0,
+        'Reportes Semana': kpisData.total_reportes_semana || 0,
+        'Reportes Mes (30d)': kpisData.total_reportes_mes || 0,
+        'Score Promedio Global': formatearPorcentaje(kpisData.score_promedio_global || 0, 2),
+        'Reportes con Problemas': kpisData.reportes_con_problemas || 0,
+        '% Con Problemas': formatearPorcentaje(kpisData.porcentaje_con_problemas || 0, 2),
+        'Activos Inspeccionados': kpisData.activos_inspeccionados || 0,
+        'Total Activos': kpisData.total_activos || 0,
+        'Horómetros Pendientes': kpisData.horometros_pendientes || 0,
+        'Horas Uso Total Mes': kpisData.horas_uso_total_mes?.toFixed(2) || '0'
+      }] : []
+
+      // HOJA 3: TOP GRÚAS PROBLEMÁTICAS
+      const gruasProblematicas = (gruasProblematicasData || []).map((g: any) => ({
+        'Grúa': g.activo_nombre,
+        'Total Inspecciones': g.total_inspecciones || g.total_reportes || 0,
+        'Inspecciones con Problemas': g.inspecciones_con_problemas || g.reportes_con_problemas || 0,
+        '% Problemas': formatearPorcentaje(g.porcentaje_problemas || 0, 1),
+        'Score Promedio': formatearPorcentaje(g.score_promedio || 0, 1),
+        'Última Inspección': g.ultima_inspeccion ? formatearFechaExcel(g.ultima_inspeccion) : '-'
+      }))
+
+      // HOJA 4: TOP PROBLEMAS DETECTADOS
+      const problemasDetectados = (problemasData || []).map((p: any) => ({
+        'Problema/Ítem': p.pregunta_texto || p.texto_pregunta || '-',
+        'Categoría': p.categoria_nombre || '-',
+        'Veces Detectado': p.veces_detectado || p.total_fallo || 0,
+        '% Ocurrencia': formatearPorcentaje(p.porcentaje_ocurrencia || p.porcentaje_fallo || 0, 1),
+        'Grúas Afectadas': p.gruas_afectadas || 0
+      }))
+
+      // HOJA 5: RENDIMIENTO OPERADORES
+      const rendimientoOperadores = operadoresData
+        .filter(op => op.total_inspecciones > 0)
+        .map(op => ({
+          'Operador': op.nombre_completo,
+          'RUT': op.rut || '-',
+          'Centro de Costo': op.centro_costo || '-',
+          'Total Inspecciones': op.total_inspecciones,
+          '% Reportes con Problemas': formatearPorcentaje(op.porcentaje_problemas, 2),
+          'Score Promedio': formatearPorcentaje(op.score_promedio, 2),
+          'Duración Promedio (min)': op.duracion_promedio_minutos > 0
+            ? op.duracion_promedio_minutos.toFixed(2)
+            : '-',
+          'Última Inspección': op.dias_desde_ultima === -1
+            ? 'Sin inspecciones'
+            : op.dias_desde_ultima === 0
+              ? 'Hoy'
+              : `Hace ${Math.floor(op.dias_desde_ultima)} días`
+        }))
+
+      // HOJA 6: ESTADO HORÓMETROS
+      const estadoHorometros = estadoHorometrosData.map(e => ({
+        'Grúa': e.activo_nombre,
+        'Horómetro Actual (h)': e.horometro_actual || 'N/A',
+        'Fecha Último Reporte': e.fecha_ultimo_reporte
+          ? formatearFechaExcel(e.fecha_ultimo_reporte)
+          : 'Sin reportes',
+        'Días Sin Actualización': e.dias_sin_actualizacion ?? 'N/A',
+        'Estado Operativo': e.ultima_grua_operativa ? 'Operativa' : 'Inactiva'
+      }))
+
+      // Crear Excel con 6 hojas
+      const hojas = [
+        { nombre: 'Reportes', datos: reportes },
+        { nombre: 'KPIs', datos: kpisHoja },
+        { nombre: 'Grúas Problemáticas', datos: gruasProblematicas },
+        { nombre: 'Top Problemas', datos: problemasDetectados },
+        { nombre: 'Operadores', datos: rendimientoOperadores },
+        { nombre: 'Horómetros', datos: estadoHorometros }
+      ]
+
+      const nombreArchivo = generarNombreArchivo('dashboard_completo', 'xlsx')
+      exportarAExcelMultiplesHojas(hojas, nombreArchivo)
+    } catch (error) {
+      console.error('Error al exportar dashboard completo:', error)
+      alert('Error al generar la exportación completa')
+    }
+  }
+
+  async function exportarReportesCSV() {
+    try {
+      // Calcular fecha hace 90 días
+      const fecha90DiasAtras = new Date()
+      fecha90DiasAtras.setDate(fecha90DiasAtras.getDate() - 90)
+      const fechaDesde = fecha90DiasAtras.toISOString()
+
+      const reportesData = await obtenerReportesConFiltros(fechaDesde)
+
+      const reportes = (reportesData || []).map((r: any) => ({
+        'ID Reporte': r.id,
+        'Fecha/Hora Completado': formatearFechaExcel(r.timestamp_completado),
+        'Grúa': r.activo?.nombre || '-',
+        'Operador': r.usuario?.nombre_completo || '-',
+        'RUT Operador': r.usuario?.rut || '-',
+        'Centro de Costo': r.usuario?.centro_costo || '-',
+        'Turno': r.turno ? `Turno ${r.turno}` : '-',
+        'Duración (min)': r.duracion_minutos || 0,
+        'Score (%)': formatearPorcentaje(r.score_cumplimiento || 0, 2),
+        '¿Tiene Problemas?': r.tiene_problemas ? 'Sí' : 'No',
+        'Total Respuestas': r.total_respuestas || 0,
+        'Respuestas Malas': r.respuestas_malas || 0,
+        'Horómetro Inicial (h)': r.horometro_inicial || '-',
+        'Horómetro Final (h)': r.horometro_final || '-',
+        'Horas de Uso': r.horas_uso?.toFixed(2) || '-'
+      }))
+
+      const nombreArchivo = generarNombreArchivo('reportes_dashboard', 'csv')
+      exportarACSV(reportes, nombreArchivo)
+    } catch (error) {
+      console.error('Error al exportar reportes:', error)
+      alert('Error al generar la exportación de reportes')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -471,7 +643,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Sección Derecha: Botón Cerrar Sesión y Hamburguesa */}
+            {/* Sección Derecha: Cerrar Sesión y Hamburguesa */}
             <div className="flex items-center justify-end gap-3">
               {/* Botón Cerrar Sesión (solo desktop) */}
               <button
@@ -497,6 +669,47 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-6">
+          {/* Columna Izquierda: Botones de Exportación (solo desktop) */}
+          <div className="hidden xl:block w-64 flex-shrink-0">
+            <div className="sticky top-4 space-y-4">
+              <div className="bg-white rounded-lg shadow-lg border-2 border-green-100 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText className="w-5 h-5 text-green-600" />
+                  <h3 className="text-sm font-bold text-gray-900">Exportar Datos</h3>
+                </div>
+                <p className="text-xs text-gray-600 mb-4">Descarga información consolidada del sistema</p>
+
+                <div className="space-y-3">
+                  <ExportButton
+                    onExport={exportarDashboardCompleto}
+                    label="Exportar Completo"
+                    variant="primary"
+                    icon="excel"
+                    disabled={!kpis}
+                    className="w-full justify-center"
+                  />
+                  <ExportButton
+                    onExport={exportarReportesCSV}
+                    label="Exportar Reportes"
+                    variant="secondary"
+                    icon="csv"
+                    disabled={!kpis}
+                    className="w-full justify-center"
+                  />
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500">
+                    <span className="font-semibold">Excel (Verde):</span> Incluye 6 hojas con datos del sistema
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    <span className="font-semibold">CSV (Azul):</span> Solo reportes de inspección
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Contenido Principal */}
           <div className="flex-1 min-w-0">
         {/* KPIs Grid */}
