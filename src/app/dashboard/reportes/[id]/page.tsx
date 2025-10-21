@@ -13,7 +13,8 @@ import {
   MessageSquare,
   Image as ImageIcon,
   Timer,
-  Download
+  Download,
+  FileImage
 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { obtenerReporteDetalle, ReporteDetalle } from '@/lib/reportes-service'
@@ -27,6 +28,7 @@ import {
   formatearPorcentaje,
   calcularAntiguedad
 } from '@/lib/export-utils'
+import { exportarReporteConFotos } from '@/lib/pdf-export-utils'
 
 export default function ReporteDetallePage() {
   const router = useRouter()
@@ -36,6 +38,7 @@ export default function ReporteDetallePage() {
   const [loading, setLoading] = useState(true)
   const [reporte, setReporte] = useState<ReporteDetalle | null>(null)
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null)
+  const [exportandoPDF, setExportandoPDF] = useState(false)
 
   useEffect(() => {
     checkAuthAndLoad()
@@ -312,6 +315,43 @@ export default function ReporteDetallePage() {
     exportarAExcelMultiplesHojas(hojas, nombreArchivo)
   }
 
+  async function exportarReporteConFotosPDF() {
+    if (!reporte) {
+      alert('No hay reporte para exportar')
+      return
+    }
+
+    // Verificar si hay respuestas incorrectas (con o sin fotos)
+    const respuestasIncorrectas = reporte.respuestas.filter((resp) => !resp.respuesta)
+
+    if (respuestasIncorrectas.length === 0) {
+      alert('Este reporte no tiene preguntas incorrectas para exportar')
+      return
+    }
+
+    // Informar al usuario si no hay fotos pero sí hay preguntas incorrectas
+    const respuestasConFotos = respuestasIncorrectas.filter(
+      (resp) => resp.fotos && resp.fotos.length > 0
+    )
+
+    if (respuestasConFotos.length === 0) {
+      const confirmar = confirm(
+        `Este reporte tiene ${respuestasIncorrectas.length} pregunta(s) incorrecta(s) pero no tiene fotos. ¿Desea continuar con la exportación?`
+      )
+      if (!confirmar) return
+    }
+
+    setExportandoPDF(true)
+    try {
+      await exportarReporteConFotos(reporte)
+    } catch (error) {
+      console.error('Error exportando reporte con fotos:', error)
+      alert('Error al exportar el reporte con fotos. Por favor, intente nuevamente.')
+    } finally {
+      setExportandoPDF(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -395,6 +435,23 @@ export default function ReporteDetallePage() {
                 variant="secondary"
                 icon="csv"
               />
+              <button
+                onClick={exportarReporteConFotosPDF}
+                disabled={exportandoPDF}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {exportandoPDF ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Exportando...
+                  </>
+                ) : (
+                  <>
+                    <FileImage className="w-4 h-4" />
+                    Exportar PDF con Fotos
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
