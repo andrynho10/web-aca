@@ -25,19 +25,38 @@ function calcularAntiguedadOperador(fechaIngreso: string): string {
 }
 
 /**
- * Convierte una URL de imagen a base64
+ * Convierte una URL de imagen a base64 y obtiene sus dimensiones
  */
-async function imagenUrlABase64(url: string): Promise<string> {
+async function imagenUrlABase64ConDimensiones(url: string): Promise<{ base64: string, width: number, height: number }> {
   try {
     const response = await fetch(url)
     const blob = await response.blob()
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => {
         const result = reader.result as string
         // Remover el prefijo data:image/...;base64,
         const base64 = result.split(',')[1]
-        resolve(base64)
+
+        // Crear un objeto Image para obtener las dimensiones
+        const img = new Image()
+        img.onload = () => {
+          resolve({
+            base64,
+            width: img.naturalWidth,
+            height: img.naturalHeight
+          })
+        }
+        img.onerror = () => {
+          // Si falla obtener dimensiones, usar valores por defecto
+          resolve({
+            base64,
+            width: 800,
+            height: 600
+          })
+        }
+        img.src = result
       }
       reader.onerror = reject
       reader.readAsDataURL(blob)
@@ -288,22 +307,45 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
         for (let fotoIndex = 0; fotoIndex < respuesta.fotos.length; fotoIndex++) {
           const foto = respuesta.fotos[fotoIndex]
           try {
-            agregarPaginaSiNecesario(80)
+            // Descargar y convertir imagen con dimensiones
+            const imagenData = await imagenUrlABase64ConDimensiones(foto.url_storage)
 
-            // Descargar y convertir imagen
-            const imagenBase64 = await imagenUrlABase64(foto.url_storage)
+            // Calcular dimensiones manteniendo aspect ratio
+            const aspectRatio = imagenData.width / imagenData.height
+            const maxWidth = 70  // Ancho máximo en mm
+            const maxHeight = 100 // Alto máximo en mm
 
-            // Posición: 2 columnas
-            const imagenWidth = 80
-            const imagenHeight = 60
-            const imagenX = margin + (fotoIndex % 2 === 0 ? 0 : contentWidth - imagenWidth)
+            let imagenWidth: number
+            let imagenHeight: number
+
+            if (aspectRatio > 1) {
+              // Imagen horizontal (landscape)
+              imagenWidth = maxWidth
+              imagenHeight = imagenWidth / aspectRatio
+            } else {
+              // Imagen vertical (portrait) - común en fotos de móvil
+              imagenHeight = maxHeight
+              imagenWidth = imagenHeight * aspectRatio
+              // Limitar ancho si es necesario
+              if (imagenWidth > maxWidth) {
+                imagenWidth = maxWidth
+                imagenHeight = imagenWidth / aspectRatio
+              }
+            }
+
+            agregarPaginaSiNecesario(imagenHeight + 20)
+
+            // Posición: centrada si es vertical, 2 columnas si es horizontal
+            const imagenX = aspectRatio > 1
+              ? margin + (fotoIndex % 2 === 0 ? 0 : contentWidth - imagenWidth)
+              : margin + (contentWidth - imagenWidth) / 2 // Centrada
 
             pdf.setFont('helvetica', 'normal')
             pdf.text(`Foto ${fotoIndex + 1}:`, imagenX, yPosition)
             yPosition += 5
 
             pdf.addImage(
-              `data:image/jpeg;base64,${imagenBase64}`,
+              `data:image/jpeg;base64,${imagenData.base64}`,
               'JPEG',
               imagenX,
               yPosition,
@@ -313,8 +355,8 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
 
             yPosition += imagenHeight + 10
 
-            // Salto de línea después de la segunda columna
-            if (fotoIndex % 2 === 1) {
+            // Salto de línea después de la segunda columna solo si es horizontal
+            if (aspectRatio > 1 && fotoIndex % 2 === 1) {
               yPosition += 10
             }
           } catch (error) {
