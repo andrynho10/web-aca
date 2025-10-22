@@ -321,24 +321,21 @@ export default function ReporteDetallePage() {
       return
     }
 
-    // Verificar si hay respuestas incorrectas (con o sin fotos)
-    const respuestasIncorrectas = reporte.respuestas.filter((resp) => !resp.respuesta)
+    // Verificar si hay respuestas malas (con o sin fotos)
+    const respuestasMalas = reporte.respuestas.filter((resp) => !resp.respuesta)
 
-    if (respuestasIncorrectas.length === 0) {
-      alert('Este reporte no tiene preguntas incorrectas para exportar')
-      return
-    }
-
-    // Informar al usuario si no hay fotos pero sí hay preguntas incorrectas
-    const respuestasConFotos = respuestasIncorrectas.filter(
-      (resp) => resp.fotos && resp.fotos.length > 0
-    )
-
-    if (respuestasConFotos.length === 0) {
-      const confirmar = confirm(
-        `Este reporte tiene ${respuestasIncorrectas.length} pregunta(s) incorrecta(s) pero no tiene fotos. ¿Desea continuar con la exportación?`
+    // Informar al usuario si no hay fotos pero sí hay preguntas malas
+    if (respuestasMalas.length > 0) {
+      const respuestasConFotos = respuestasMalas.filter(
+        (resp) => resp.fotos && resp.fotos.length > 0
       )
-      if (!confirmar) return
+
+      if (respuestasConFotos.length === 0) {
+        const confirmar = confirm(
+          `Este reporte tiene ${respuestasMalas.length} pregunta(s) mala(s) pero no tiene fotos. ¿Desea continuar con la exportación?`
+        )
+        if (!confirmar) return
+      }
     }
 
     setExportandoPDF(true)
