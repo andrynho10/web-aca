@@ -65,7 +65,7 @@ function agregarTextoConSalto(
 }
 
 /**
- * Exporta un reporte enfocado en preguntas incorrectas con fotos incrustadas en PDF
+ * Exporta un reporte enfocado en preguntas malas con fotos incrustadas en PDF
  */
 export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<void> {
   if (!reporte) {
@@ -90,9 +90,10 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
       }
     }
 
-    // Filtrar solo respuestas incorrectas (MALAS)
-    const respuestasIncorrectas = reporte.respuestas.filter(resp => !resp.respuesta)
-    const respuestasConFotos = respuestasIncorrectas.filter(resp => resp.fotos && resp.fotos.length > 0)
+    // Filtrar respuestas Malas y Buenas
+    const respuestasMalas = reporte.respuestas.filter(resp => !resp.respuesta)
+    const respuestasBuenas = reporte.respuestas.filter(resp => resp.respuesta)
+    const respuestasConFotos = respuestasMalas.filter(resp => resp.fotos && resp.fotos.length > 0)
 
     // === PORTADA ===
     pdf.setFontSize(20)
@@ -152,18 +153,18 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
     pdf.text(`Preguntas incorrectas con fotos: ${respuestasConFotos.length}`, margin, yPosition)
     yPosition += 15
 
-    // === LISTA DE TODAS LAS PREGUNTAS INCORRECTAS ===
+    // === LISTA DE TODAS LAS PREGUNTAS MALAS ===
     agregarPaginaSiNecesario(20)
 
     pdf.setFontSize(14)
     pdf.setFont('helvetica', 'bold')
-    pdf.text(`RESPUESTAS MALO (${respuestasIncorrectas.length} de ${totalPreguntas})`, margin, yPosition)
+    pdf.text(`RESPUESTAS MALO (${respuestasMalas.length} de ${totalPreguntas})`, margin, yPosition)
     yPosition += 15
 
-    // Listar todas las preguntas incorrectas primero
-    if (respuestasIncorrectas.length > 0) {
-      for (let index = 0; index < respuestasIncorrectas.length; index++) {
-        const respuesta = respuestasIncorrectas[index]
+    // Listar todas las preguntas malas primero
+    if (respuestasMalas.length > 0) {
+      for (let index = 0; index < respuestasMalas.length; index++) {
+        const respuesta = respuestasMalas[index]
         agregarPaginaSiNecesario(25)
 
         pdf.setFontSize(12)
@@ -212,6 +213,36 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
       yPosition += 15
     }
 
+    // === LISTA DE PREGUNTAS BUENAS (COMPRIMIDA) ===
+    if (respuestasBuenas.length > 0) {
+      agregarPaginaSiNecesario(20)
+
+      pdf.setFontSize(14)
+      pdf.setFont('helvetica', 'bold')
+      pdf.text(`RESPUESTAS BUENO (${respuestasBuenas.length} de ${totalPreguntas})`, margin, yPosition)
+      yPosition += 8
+
+      pdf.setFontSize(8)
+      pdf.setFont('helvetica', 'normal')
+
+      for (let index = 0; index < respuestasBuenas.length; index++) {
+        const respuesta = respuestasBuenas[index]
+        agregarPaginaSiNecesario(6)
+
+        yPosition = agregarTextoConSalto(
+          pdf,
+          respuesta.pregunta.texto,
+          margin,
+          yPosition,
+          contentWidth,
+          3.5 // lineHeight muy reducido para máxima compresión
+        )
+        yPosition += 0.5 // Espaciado mínimo entre preguntas
+      }
+
+      yPosition += 10
+    }
+
     // === SECCIÓN DE FOTOS (SOLO SI HAY) ===
     if (respuestasConFotos.length > 0) {
       agregarPaginaSiNecesario(30)
@@ -224,7 +255,7 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
       pdf.text('FOTOS DE PREGUNTAS INCORRECTAS', margin, yPosition)
       yPosition += 15
 
-      // Procesar cada respuesta con fotos
+      // Procesar cada respuesta mala con fotos
       for (let index = 0; index < respuestasConFotos.length; index++) {
         const respuesta = respuestasConFotos[index]
         agregarPaginaSiNecesario(60)
