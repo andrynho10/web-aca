@@ -228,7 +228,7 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
     } else {
       pdf.setFontSize(12)
       pdf.setFont('helvetica', 'normal')
-      pdf.text('No hay preguntas incorrectas en este reporte', margin, yPosition)
+      pdf.text('No hay preguntas malas en este reporte', margin, yPosition)
       yPosition += 15
     }
 
