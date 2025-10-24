@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Forklift, Power, PowerOff, AlertCircle, CheckCircle, Timer, BarChart3, Plus, Edit, Trash2, X } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
@@ -140,13 +140,19 @@ export default function GruasPage() {
     exportarACSV(datosExport, nombreArchivo)
   }
 
-  useEffect(() => {
-    checkAuth()
+  const cargarActivos = useCallback(async () => {
+    const [activosData, agregadosData] = await Promise.all([
+      obtenerActivosConTiempoDesactivada(),
+      obtenerAgregadosDiariosActivos(30)
+    ])
+
+    setActivos(activosData)
+    setResumenUso(construirResumenUsoActivos(agregadosData))
   }, [])
 
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     const user = await getCurrentUser()
-    
+
     if (!user || user.rol !== 'SUPERVISOR') {
       router.push('/login')
       return
@@ -155,17 +161,11 @@ export default function GruasPage() {
     setUsuario(user)
     await cargarActivos()
     setLoading(false)
-  }
+  }, [router, cargarActivos])
 
-  async function cargarActivos() {
-    const [activosData, agregadosData] = await Promise.all([
-      obtenerActivosConTiempoDesactivada(),
-      obtenerAgregadosDiariosActivos(30)
-    ])
-
-    setActivos(activosData)
-    setResumenUso(construirResumenUsoActivos(agregadosData))
-  }
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   async function handleCambiarEstado(activo: ActivoConEstado) {
     setSelectedActivo(activo)

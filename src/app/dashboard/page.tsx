@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   BarChart3,
@@ -252,9 +252,67 @@ export default function DashboardPage() {
   const gruasMostradas = mostrarTodasGruas ? topUso : topUso.slice(0, 5)
   const gruasProblematicasMostradas = mostrarTodasGruasProblematicas ? topGruas : topGruas.slice(0, 5)
 
+  const cargarDatos = useCallback(async (silencioso: boolean = false) => {
+    if (!silencioso) {
+      setLoading(true)
+    } else {
+      setActualizando(true)
+    }
+
+    try {
+      const [
+        kpisData,
+        tendenciaData,
+        turnosData,
+        gruasData,
+        problemasData,
+        resumenUsoData,
+        reportesData
+      ] = await Promise.all([
+        obtenerKPIs(),
+        obtenerTendenciaDiaria(30),
+        obtenerAnalisisTurnos(30),
+        obtenerTopGruasProblematicas(10, 30),
+        obtenerTopProblemas(30),
+        obtenerResumenUsoActivosRPC(),
+        cargarReportesRecientes()
+      ])
+
+      setKpis(kpisData)
+      setTendencia(tendenciaData)
+      setTurnos(turnosData)
+      setTopGruas(gruasData)
+      setTopProblemas(problemasData)
+      setResumenUsoActivos(resumenUsoData)
+      setReportesRecientes(reportesData)
+      setUltimaActualizacion(new Date())
+    } catch (error) {
+      console.error('Error cargando datos:', error)
+    } finally {
+      if (!silencioso) {
+        setLoading(false)
+      } else {
+        setActualizando(false)
+      }
+    }
+  }, [])
+
+  const checkAuth = useCallback(async () => {
+    const user = await getCurrentUser()
+
+    if (!user || user.rol !== 'SUPERVISOR') {
+      router.push('/login')
+      return
+    }
+
+    setUsuario(user)
+    await cargarDatos()
+    setLoading(false)
+  }, [router, cargarDatos])
+
   useEffect(() => {
     checkAuth()
-  }, [])
+  }, [checkAuth])
 
   // ========================================
   // REALTIME SUBSCRIPTION (Actualización Instantánea)
@@ -303,7 +361,7 @@ export default function DashboardPage() {
       console.log('Desconectando Realtime...')
       supabase.removeChannel(channel)
     }
-  }, [usuario])
+  }, [usuario, cargarDatos])
 
   // ========================================
   // POLLING DE RESPALDO (cada 2 minutos)
@@ -322,65 +380,7 @@ export default function DashboardPage() {
       console.log('â±ï¸ Deteniendo polling')
       clearInterval(intervalo)
     }
-  }, [usuario])
-
-  async function checkAuth() {
-    const user = await getCurrentUser()
-    
-    if (!user || user.rol !== 'SUPERVISOR') {
-      router.push('/login')
-      return
-    }
-
-    setUsuario(user)
-    await cargarDatos()
-    setLoading(false)
-  }
-
-  async function cargarDatos(silencioso: boolean = false) {
-    if (!silencioso) {
-      setLoading(true)
-    } else {
-      setActualizando(true)
-    }
-
-    try {
-      const [
-        kpisData,
-        tendenciaData,
-        turnosData,
-        gruasData,
-        problemasData,
-        resumenUsoData,
-        reportesData
-      ] = await Promise.all([
-        obtenerKPIs(),
-        obtenerTendenciaDiaria(30),
-        obtenerAnalisisTurnos(30),
-        obtenerTopGruasProblematicas(10, 30),
-        obtenerTopProblemas(30),
-        obtenerResumenUsoActivosRPC(),
-        cargarReportesRecientes()
-      ])
-
-      setKpis(kpisData)
-      setTendencia(tendenciaData)
-      setTurnos(turnosData)
-      setTopGruas(gruasData)
-      setTopProblemas(problemasData)
-      setResumenUsoActivos(resumenUsoData)
-      setReportesRecientes(reportesData)
-      setUltimaActualizacion(new Date())
-    } catch (error) {
-      console.error('Error cargando datos:', error)
-    } finally {
-      if (!silencioso) {
-        setLoading(false)
-      } else {
-        setActualizando(false)
-      }
-    }
-  }
+  }, [usuario, cargarDatos])
 
   async function handleLogout() {
     await logout()

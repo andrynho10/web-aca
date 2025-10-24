@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Calendar } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
@@ -13,22 +13,16 @@ export default function HeatmapPage() {
   const [heatmapData, setHeatmapData] = useState<HeatmapData[]>([])
   const [dias, setDias] = useState(30)
 
-  // Verificar autenticación al montar
-  useEffect(() => {
-    checkAuthAndLoad()
-  }, [])
-
-  // Recargar datos cuando cambia el período
-  useEffect(() => {
-    if (!loading) {
-      cargarHeatmap()
-    }
+  const cargarHeatmap = useCallback(async () => {
+    setLoading(true)
+    const data = await obtenerHeatmapGruas(dias)
+    setHeatmapData(data)
+    setLoading(false)
   }, [dias])
 
-
-  async function checkAuthAndLoad() {
+  const checkAuthAndLoad = useCallback(async () => {
     const user = await getCurrentUser()
-    
+
     if (!user || user.rol !== 'SUPERVISOR') {
       router.push('/login')
       return
@@ -36,14 +30,19 @@ export default function HeatmapPage() {
 
     await cargarHeatmap()
     setLoading(false)
-  }
+  }, [router, cargarHeatmap])
 
-  async function cargarHeatmap() {
-    setLoading(true)
-    const data = await obtenerHeatmapGruas(dias)
-    setHeatmapData(data)
-    setLoading(false)
-  }
+  // Verificar autenticación al montar
+  useEffect(() => {
+    checkAuthAndLoad()
+  }, [checkAuthAndLoad])
+
+  // Recargar datos cuando cambia el período
+  useEffect(() => {
+    if (!loading) {
+      cargarHeatmap()
+    }
+  }, [cargarHeatmap, loading])
 
   function handleCellClick(activoId: number, fecha: string) {
     // Navegar a lista de reportes filtrada por grúa y fecha

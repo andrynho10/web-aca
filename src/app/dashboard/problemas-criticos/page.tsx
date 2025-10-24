@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, 
@@ -46,21 +46,16 @@ export default function ProblemasCriticosPage() {
   const [filtroEstado, setFiltroEstado] = useState<'TODOS' | 'CRITICA' | 'ALTA' | 'MEDIA'>('TODOS')
   const [filtroTendencia, setFiltroTendencia] = useState<'TODOS' | 'EMPEORANDO' | 'MEJORANDO' | 'ESTABLE'>('TODOS')
 
-  // Verificar autenticación al montar
-  useEffect(() => {
-    checkAuthAndLoad()
-  }, [])
-
-  // Recargar datos cuando cambia el período
-  useEffect(() => {
-    if (!loading) {
-      cargarDatos()
-    }
+  const cargarDatos = useCallback(async () => {
+    setLoading(true)
+    const data = await obtenerAnalisisProblemasCriticos(dias)
+    setProblemas(data)
+    setLoading(false)
   }, [dias])
 
-  async function checkAuthAndLoad() {
+  const checkAuthAndLoad = useCallback(async () => {
     const user = await getCurrentUser()
-    
+
     if (!user || user.rol !== 'SUPERVISOR') {
       router.push('/login')
       return
@@ -68,14 +63,19 @@ export default function ProblemasCriticosPage() {
 
     await cargarDatos()
     setLoading(false)
-  }
+  }, [router, cargarDatos])
 
-  async function cargarDatos() {
-    setLoading(true)
-    const data = await obtenerAnalisisProblemasCriticos(dias)
-    setProblemas(data)
-    setLoading(false)
-  }
+  // Verificar autenticación al montar
+  useEffect(() => {
+    checkAuthAndLoad()
+  }, [checkAuthAndLoad])
+
+  // Recargar datos cuando cambia el período
+  useEffect(() => {
+    if (!loading) {
+      cargarDatos()
+    }
+  }, [cargarDatos, loading])
 
   async function seleccionarProblema(preguntaId: number) {
     if (problemaSeleccionado === preguntaId) {

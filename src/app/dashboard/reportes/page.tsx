@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   ArrowLeft,
@@ -36,7 +36,7 @@ type ReportesFiltroOverrides = {
   soloProblemas?: boolean
 }
 
-export default function ReportesPage() {
+function ReportesContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
@@ -56,9 +56,89 @@ export default function ReportesPage() {
   const [mostrandoLimitado, setMostrandoLimitado] = useState(true)
   const [cargandoTodo, setCargandoTodo] = useState(false)
 
+  const cargarActivos = useCallback(async () => {
+    const data = await obtenerActivos()
+    setActivos(data)
+  }, [])
+
+  const cargarUsuarios = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('id, nombre_completo, rol')
+        .eq('rol', 'OPERADOR')
+        .order('nombre_completo', { ascending: true })
+
+      if (error) throw error
+      setUsuarios(data || [])
+    } catch (error) {
+      console.error('Error cargando usuarios:', error)
+    }
+  }, [])
+
+  const cargarReportes = useCallback(async (overrides: ReportesFiltroOverrides = {}, cargarTodo = false) => {
+    const fechaDesdeValue = Object.prototype.hasOwnProperty.call(overrides, 'fechaDesde')
+      ? overrides.fechaDesde
+      : fechaDesde
+    const fechaHastaValue = Object.prototype.hasOwnProperty.call(overrides, 'fechaHasta')
+      ? overrides.fechaHasta
+      : fechaHasta
+    const activoValue = Object.prototype.hasOwnProperty.call(overrides, 'activoSeleccionado')
+      ? overrides.activoSeleccionado
+      : activoSeleccionado
+    const operadorValue = Object.prototype.hasOwnProperty.call(overrides, 'operadorSeleccionado')
+      ? overrides.operadorSeleccionado
+      : operadorSeleccionado
+    const turnoValue = Object.prototype.hasOwnProperty.call(overrides, 'turnoSeleccionado')
+      ? overrides.turnoSeleccionado
+      : turnoSeleccionado
+    const soloProblemasValue = Object.prototype.hasOwnProperty.call(overrides, 'soloProblemas')
+      ? overrides.soloProblemas ?? false
+      : soloProblemas
+
+    const data = await obtenerReportesConFiltros(
+      fechaDesdeValue || undefined,
+      fechaHastaValue || undefined,
+      activoValue,
+      soloProblemasValue,
+      operadorValue,
+      turnoValue,
+      cargarTodo
+    )
+
+    setReportes(data)
+
+    // Determinar si estamos mostrando datos limitados
+    const tieneRangoFechas = !!(fechaDesdeValue || fechaHastaValue)
+    setMostrandoLimitado(!cargarTodo && !tieneRangoFechas)
+  }, [fechaDesde, fechaHasta, activoSeleccionado, operadorSeleccionado, turnoSeleccionado, soloProblemas])
+
+  const checkAuthAndLoad = useCallback(async () => {
+    const user = await getCurrentUser()
+
+    if (!user || user.rol !== 'SUPERVISOR') {
+      router.push('/login')
+      return
+    }
+
+    await Promise.all([
+      cargarActivos(),
+      cargarUsuarios()
+    ])
+
+    const hasUrlFilters = ['problemas', 'activo', 'desde', 'hasta'].some((param) => searchParams.has(param))
+
+    // Solo cargar reportes inicialmente si NO hay filtros desde URL
+    if (!hasUrlFilters) {
+      await cargarReportes()
+    }
+
+    setLoading(false)
+  }, [router, cargarActivos, cargarUsuarios, searchParams, cargarReportes])
+
   useEffect(() => {
     checkAuthAndLoad()
-  }, [])
+  }, [checkAuthAndLoad])
 
   useEffect(() => {
     const problemasParam = searchParams.get('problemas')
@@ -103,93 +183,12 @@ export default function ReportesPage() {
     }
   }, [searchParams])
 
-    useEffect(() => {
-        if (filtrosAplicados && !loading) {
-        cargarReportes()
-        setFiltrosAplicados(false) // Reset para que no se ejecute múltiples veces
-        }
-    }, [filtrosAplicados, loading])
-
-
-  async function checkAuthAndLoad() {
-    const user = await getCurrentUser()
-    
-    if (!user || user.rol !== 'SUPERVISOR') {
-      router.push('/login')
-      return
+  useEffect(() => {
+    if (filtrosAplicados && !loading) {
+      void cargarReportes()
+      setFiltrosAplicados(false) // Reset para que no se ejecute múltiples veces
     }
-
-    await Promise.all([
-      cargarActivos(),
-      cargarUsuarios()
-    ])
-    
-    const hasUrlFilters = ['problemas', 'activo', 'desde', 'hasta'].some((param) => searchParams.has(param))
-
-    // Solo cargar reportes inicialmente si NO hay filtros desde URL
-    if (!hasUrlFilters) {
-      await cargarReportes()
-    }
-    
-    setLoading(false)
-  }
-
-  async function cargarReportes(overrides: ReportesFiltroOverrides = {}, cargarTodo = false) {
-    const fechaDesdeValue = Object.prototype.hasOwnProperty.call(overrides, 'fechaDesde')
-      ? overrides.fechaDesde
-      : fechaDesde
-    const fechaHastaValue = Object.prototype.hasOwnProperty.call(overrides, 'fechaHasta')
-      ? overrides.fechaHasta
-      : fechaHasta
-    const activoValue = Object.prototype.hasOwnProperty.call(overrides, 'activoSeleccionado')
-      ? overrides.activoSeleccionado
-      : activoSeleccionado
-    const operadorValue = Object.prototype.hasOwnProperty.call(overrides, 'operadorSeleccionado')
-      ? overrides.operadorSeleccionado
-      : operadorSeleccionado
-    const turnoValue = Object.prototype.hasOwnProperty.call(overrides, 'turnoSeleccionado')
-      ? overrides.turnoSeleccionado
-      : turnoSeleccionado
-    const soloProblemasValue = Object.prototype.hasOwnProperty.call(overrides, 'soloProblemas')
-      ? overrides.soloProblemas ?? false
-      : soloProblemas
-
-    const data = await obtenerReportesConFiltros(
-      fechaDesdeValue || undefined,
-      fechaHastaValue || undefined,
-      activoValue,
-      soloProblemasValue,
-      operadorValue,
-      turnoValue,
-      cargarTodo
-    )
-
-    setReportes(data)
-
-    // Determinar si estamos mostrando datos limitados
-    const tieneRangoFechas = !!(fechaDesdeValue || fechaHastaValue)
-    setMostrandoLimitado(!cargarTodo && !tieneRangoFechas)
-  }
-
-async function cargarActivos() {
-    const data = await obtenerActivos()
-    setActivos(data)
-  }
-
-  async function cargarUsuarios() {
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('id, nombre_completo, rol')
-        .eq('rol', 'OPERADOR')
-        .order('nombre_completo', { ascending: true })
-      
-      if (error) throw error
-      setUsuarios(data || [])
-    } catch (error) {
-      console.error('Error cargando usuarios:', error)
-    }
-  }
+  }, [filtrosAplicados, loading, cargarReportes])
 
   async function aplicarFiltros(overrides?: ReportesFiltroOverrides) {
     setLoading(true)
@@ -651,5 +650,20 @@ async function cargarActivos() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function ReportesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando reportes...</p>
+        </div>
+      </div>
+    }>
+      <ReportesContent />
+    </Suspense>
   )
 }

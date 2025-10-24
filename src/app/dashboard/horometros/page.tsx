@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
@@ -45,10 +45,53 @@ export default function HorometrosPage() {
   const [operadoresPendientes, setOperadoresPendientes] = useState<OperadorHorometroPendiente[]>([])
   const [usuario, setUsuario] = useState<{ rol: string } | null>(null)
 
+  const cargarDatos = useCallback(async (silencioso: boolean = false) => {
+    if (!silencioso) {
+      setLoading(true)
+    } else {
+      setActualizando(true)
+    }
+
+    try {
+      const [correlacionData, eficienciaData, estadoData, pendientesData] = await Promise.all([
+          obtenerCorrelacionHorometroProblemas(dias),
+          obtenerEficienciaHorometro(dias),
+          obtenerEstadoHorometros(),
+          obtenerOperadoresHorometrosPendientes()
+      ])
+
+      setCorrelacion(correlacionData)
+      setEficiencia(eficienciaData)
+      setEstado(estadoData)
+      setOperadoresPendientes(pendientesData)
+    } catch (error) {
+      console.error('Error cargando datos de horómetros:', error)
+    } finally {
+      if (!silencioso) {
+        setLoading(false)
+      } else {
+        setActualizando(false)
+      }
+    }
+  }, [dias])
+
+  const checkAuthAndLoad = useCallback(async () => {
+    const user = await getCurrentUser()
+
+    if (!user || user.rol !== 'SUPERVISOR') {
+      router.push('/login')
+      return
+    }
+
+    setUsuario(user)
+    await cargarDatos()
+    setLoading(false)
+  }, [router, cargarDatos])
+
   // Verificar autenticación al montar
   useEffect(() => {
     checkAuthAndLoad()
-  }, [])
+  }, [checkAuthAndLoad])
 
   // Recargar datos cuando cambia el período
   useEffect(() => {
@@ -56,7 +99,7 @@ export default function HorometrosPage() {
     if (!loading) {
       cargarDatos()
     }
-  }, [dias])
+  }, [cargarDatos, loading])
 
   // ========================================
   // REALTIME SUBSCRIPTION para horómetros pendientes
@@ -105,50 +148,7 @@ export default function HorometrosPage() {
       console.log('[Horómetros] Desconectando Realtime...')
       supabase.removeChannel(channel)
     }
-  }, [usuario])
-
-  async function checkAuthAndLoad() {
-    const user = await getCurrentUser()
-
-    if (!user || user.rol !== 'SUPERVISOR') {
-      router.push('/login')
-      return
-    }
-
-    setUsuario(user)
-    await cargarDatos()
-    setLoading(false)
-  }
-
-  async function cargarDatos(silencioso: boolean = false) {
-    if (!silencioso) {
-      setLoading(true)
-    } else {
-      setActualizando(true)
-    }
-
-    try {
-      const [correlacionData, eficienciaData, estadoData, pendientesData] = await Promise.all([
-          obtenerCorrelacionHorometroProblemas(dias),
-          obtenerEficienciaHorometro(dias),
-          obtenerEstadoHorometros(),
-          obtenerOperadoresHorometrosPendientes()
-      ])
-
-      setCorrelacion(correlacionData)
-      setEficiencia(eficienciaData)
-      setEstado(estadoData)
-      setOperadoresPendientes(pendientesData)
-    } catch (error) {
-      console.error('Error cargando datos de horómetros:', error)
-    } finally {
-      if (!silencioso) {
-        setLoading(false)
-      } else {
-        setActualizando(false)
-      }
-    }
-  }
+  }, [usuario, cargarDatos])
 
   // Funciones de exportación
   function exportarOperadoresPendientesExcel() {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
@@ -35,31 +35,7 @@ export default function OperadoresPage() {
   const [dias, setDias] = useState(90)
   const [ordenamiento, setOrdenamiento] = useState<'inspecciones' | 'score' | 'problemas'>('inspecciones')
 
-  // Verificar autenticación al montar
-  useEffect(() => {
-    checkAuthAndLoad()
-  }, [])
-
-  // Recargar datos cuando cambia el período
-  useEffect(() => {
-    if (!loading) {
-      cargarDatos()
-    }
-  }, [dias])
-
-  async function checkAuthAndLoad() {
-    const user = await getCurrentUser()
-    
-    if (!user || user.rol !== 'SUPERVISOR') {
-      router.push('/login')
-      return
-    }
-
-    await cargarDatos()
-    setLoading(false)
-  }
-
-  async function cargarDatos() {
+  const cargarDatos = useCallback(async () => {
     setLoading(true)
     const [operadoresData, centrosData] = await Promise.all([
       obtenerTodosLosOperadores(dias),
@@ -69,7 +45,31 @@ export default function OperadoresPage() {
     setOperadores(operadoresData)
     setCentrosCosto(centrosData)
     setLoading(false)
-  }
+  }, [dias])
+
+  const checkAuthAndLoad = useCallback(async () => {
+    const user = await getCurrentUser()
+
+    if (!user || user.rol !== 'SUPERVISOR') {
+      router.push('/login')
+      return
+    }
+
+    await cargarDatos()
+    setLoading(false)
+  }, [router, cargarDatos])
+
+  // Verificar autenticación al montar
+  useEffect(() => {
+    checkAuthAndLoad()
+  }, [checkAuthAndLoad])
+
+  // Recargar datos cuando cambia el período
+  useEffect(() => {
+    if (!loading) {
+      cargarDatos()
+    }
+  }, [cargarDatos, loading])
 
   // Funciones de exportación
   function exportarOperadoresExcel() {

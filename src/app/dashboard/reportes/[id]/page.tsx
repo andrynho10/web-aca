@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 import {
@@ -41,13 +41,14 @@ export default function ReporteDetallePage() {
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null)
   const [exportandoPDF, setExportandoPDF] = useState(false)
 
-  useEffect(() => {
-    checkAuthAndLoad()
+  const cargarReporte = useCallback(async () => {
+    const data = await obtenerReporteDetalle(reporteId)
+    setReporte(data)
   }, [reporteId])
 
-  async function checkAuthAndLoad() {
+  const checkAuthAndLoad = useCallback(async () => {
     const user = await getCurrentUser()
-    
+
     if (!user || user.rol !== 'SUPERVISOR') {
       router.push('/login')
       return
@@ -55,12 +56,11 @@ export default function ReporteDetallePage() {
 
     await cargarReporte()
     setLoading(false)
-  }
+  }, [router, cargarReporte])
 
-  async function cargarReporte() {
-    const data = await obtenerReporteDetalle(reporteId)
-    setReporte(data)
-  }
+  useEffect(() => {
+    checkAuthAndLoad()
+  }, [checkAuthAndLoad])
 
   async function descargarImagen(url: string) {
     try {
