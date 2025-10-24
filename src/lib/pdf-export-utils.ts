@@ -167,9 +167,9 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
 
     pdf.text(`Total de preguntas: ${totalPreguntas}`, margin, yPosition)
     yPosition += 8
-    pdf.text(`Preguntas incorrectas: ${totalMalas} de ${totalPreguntas}`, margin, yPosition)
+    pdf.text(`Preguntas malas: ${totalMalas} de ${totalPreguntas}`, margin, yPosition)
     yPosition += 8
-    pdf.text(`Preguntas incorrectas con fotos: ${respuestasConFotos.length}`, margin, yPosition)
+    pdf.text(`Preguntas malas con fotos: ${respuestasConFotos.length}`, margin, yPosition)
     yPosition += 15
 
     // === LISTA DE TODAS LAS PREGUNTAS MALAS ===
@@ -271,7 +271,7 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
 
       pdf.setFontSize(14)
       pdf.setFont('helvetica', 'bold')
-      pdf.text('FOTOS DE PREGUNTAS INCORRECTAS', margin, yPosition)
+      pdf.text('FOTOS DE PREGUNTAS MALAS', margin, yPosition)
       yPosition += 15
 
       // Procesar cada respuesta mala con fotos
