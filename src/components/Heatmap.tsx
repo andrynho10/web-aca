@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { Forklift } from 'lucide-react'
 
-interface HeatmapData {
+export interface HeatmapData {
   activo_id: number
   activo_nombre: string
   fecha: string

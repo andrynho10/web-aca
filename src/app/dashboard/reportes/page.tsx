@@ -7,7 +7,6 @@ import {
   Calendar,
   Clock,
   User,
-  Forklift,
   AlertTriangle,
   CheckCircle,
   Filter,
@@ -41,9 +40,9 @@ export default function ReportesPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
-  const [reportes, setReportes] = useState<any[]>([])
+  const [reportes, setReportes] = useState<Array<Record<string, unknown>>>([])
   const [activos, setActivos] = useState<Activo[]>([])
-  const [usuarios, setUsuarios] = useState<any[]>([])
+  const [usuarios, setUsuarios] = useState<Array<Record<string, unknown>>>([])
   const [filtrosAplicados, setFiltrosAplicados] = useState(false)
   
   // Filtros
@@ -254,22 +253,22 @@ async function cargarActivos() {
 
     const datosExport = reportesFiltrados.map(reporte => ({
       'ID Reporte': reporte.id,
-      'Fecha/Hora Completado': formatearFechaExcel(reporte.timestamp_completado),
-      'Grúa': reporte.activo?.nombre || '-',
-      'Modelo Grúa': reporte.activo?.modelo || '-',
-      'ID Usuario': reporte.usuario?.id || '-',
-      'Operador': reporte.usuario?.nombre_completo || '-',
-      'Rol': reporte.usuario?.rol || '-',
-      'RUT Operador': reporte.usuario?.rut || '-',
-      'ID Alternativo': reporte.usuario?.id_alternativo || '-',
-      'Centro Costo': reporte.usuario?.centro_costo || '-',
-      'Cargo': reporte.usuario?.cargo || '-',
-      'Fecha Ingreso': formatearFechaSoloExcel(reporte.usuario?.fecha_ingreso),
-      'Antigüedad': calcularAntiguedad(reporte.usuario?.fecha_ingreso),
-      'Fecha Creación Usuario': formatearFechaExcel(reporte.usuario?.created_at),
+      'Fecha/Hora Completado': formatearFechaExcel(reporte.timestamp_completado as string),
+      'Grúa': (reporte.activo as { nombre?: string } | undefined)?.nombre || '-',
+      'Modelo Grúa': (reporte.activo as { modelo?: string } | undefined)?.modelo || '-',
+      'ID Usuario': (reporte.usuario as { id?: string } | undefined)?.id || '-',
+      'Operador': (reporte.usuario as { nombre_completo?: string } | undefined)?.nombre_completo || '-',
+      'Rol': (reporte.usuario as { rol?: string } | undefined)?.rol || '-',
+      'RUT Operador': (reporte.usuario as { rut?: string } | undefined)?.rut || '-',
+      'ID Alternativo': (reporte.usuario as { id_alternativo?: string } | undefined)?.id_alternativo || '-',
+      'Centro Costo': (reporte.usuario as { centro_costo?: string } | undefined)?.centro_costo || '-',
+      'Cargo': (reporte.usuario as { cargo?: string } | undefined)?.cargo || '-',
+      'Fecha Ingreso': formatearFechaSoloExcel((reporte.usuario as { fecha_ingreso?: string } | undefined)?.fecha_ingreso),
+      'Antigüedad': calcularAntiguedad((reporte.usuario as { fecha_ingreso?: string } | undefined)?.fecha_ingreso),
+      'Fecha Creación Usuario': formatearFechaExcel((reporte.usuario as { created_at?: string } | undefined)?.created_at),
       'Turno': reporte.turno ? `Turno ${reporte.turno}` : '-',
       'Duración (min)': reporte.duracion_minutos,
-      'Score': formatearPorcentaje(reporte.score_cumplimiento, 2),
+      'Score': formatearPorcentaje(Number(reporte.score_cumplimiento), 2),
       'Total Items': reporte.total_respuestas,
       'Items Malos': reporte.respuestas_malas,
       'Tiene Problemas': reporte.tiene_problemas ? 'Sí' : 'No',
@@ -291,22 +290,22 @@ async function cargarActivos() {
 
     const datosExport = reportesFiltrados.map(reporte => ({
       'ID Reporte': reporte.id,
-      'Fecha/Hora Completado': formatearFechaExcel(reporte.timestamp_completado),
-      'Grúa': reporte.activo?.nombre || '-',
-      'Modelo Grúa': reporte.activo?.modelo || '-',
-      'ID Usuario': reporte.usuario?.id || '-',
-      'Operador': reporte.usuario?.nombre_completo || '-',
-      'Rol': reporte.usuario?.rol || '-',
-      'RUT Operador': reporte.usuario?.rut || '-',
-      'ID Alternativo': reporte.usuario?.id_alternativo || '-',
-      'Centro Costo': reporte.usuario?.centro_costo || '-',
-      'Cargo': reporte.usuario?.cargo || '-',
-      'Fecha Ingreso': formatearFechaSoloExcel(reporte.usuario?.fecha_ingreso),
-      'Antigüedad': calcularAntiguedad(reporte.usuario?.fecha_ingreso),
-      'Fecha Creación Usuario': formatearFechaExcel(reporte.usuario?.created_at),
+      'Fecha/Hora Completado': formatearFechaExcel(reporte.timestamp_completado as string),
+      'Grúa': (reporte.activo as { nombre?: string } | undefined)?.nombre || '-',
+      'Modelo Grúa': (reporte.activo as { modelo?: string } | undefined)?.modelo || '-',
+      'ID Usuario': (reporte.usuario as { id?: string } | undefined)?.id || '-',
+      'Operador': (reporte.usuario as { nombre_completo?: string } | undefined)?.nombre_completo || '-',
+      'Rol': (reporte.usuario as { rol?: string } | undefined)?.rol || '-',
+      'RUT Operador': (reporte.usuario as { rut?: string } | undefined)?.rut || '-',
+      'ID Alternativo': (reporte.usuario as { id_alternativo?: string } | undefined)?.id_alternativo || '-',
+      'Centro Costo': (reporte.usuario as { centro_costo?: string } | undefined)?.centro_costo || '-',
+      'Cargo': (reporte.usuario as { cargo?: string } | undefined)?.cargo || '-',
+      'Fecha Ingreso': formatearFechaSoloExcel((reporte.usuario as { fecha_ingreso?: string } | undefined)?.fecha_ingreso),
+      'Antigüedad': calcularAntiguedad((reporte.usuario as { fecha_ingreso?: string } | undefined)?.fecha_ingreso),
+      'Fecha Creación Usuario': formatearFechaExcel((reporte.usuario as { created_at?: string } | undefined)?.created_at),
       'Turno': reporte.turno ? `Turno ${reporte.turno}` : '-',
       'Duración (min)': reporte.duracion_minutos,
-      'Score': formatearPorcentaje(reporte.score_cumplimiento, 2),
+      'Score': formatearPorcentaje(Number(reporte.score_cumplimiento), 2),
       'Total Items': reporte.total_respuestas,
       'Items Malos': reporte.respuestas_malas,
       'Tiene Problemas': reporte.tiene_problemas ? 'Sí' : 'No',
@@ -325,10 +324,13 @@ async function cargarActivos() {
     if (!busqueda) return true
     
     const searchLower = busqueda.toLowerCase()
+    const activo = reporte.activo as { nombre?: string } | undefined
+    const usuario = reporte.usuario as { nombre_completo?: string } | undefined
+    const id = reporte.id as string | undefined
     return (
-      reporte.activo?.nombre?.toLowerCase().includes(searchLower) ||
-      reporte.usuario?.nombre_completo?.toLowerCase().includes(searchLower) ||
-      reporte.id.toLowerCase().includes(searchLower)
+      activo?.nombre?.toLowerCase().includes(searchLower) ||
+      usuario?.nombre_completo?.toLowerCase().includes(searchLower) ||
+      id?.toLowerCase().includes(searchLower)
     )
   })
 
@@ -490,8 +492,8 @@ async function cargarActivos() {
               >
                 <option value="">Todos</option>
                 {usuarios.map(usuario => (
-                  <option key={usuario.id} value={usuario.id}>
-                    {usuario.nombre_completo}
+                  <option key={String(usuario.id)} value={String(usuario.id)}>
+                    {String(usuario.nombre_completo)}
                   </option>
                 ))}
               </select>
@@ -562,7 +564,9 @@ async function cargarActivos() {
             </div>
           ) : (
             reportesFiltrados.map((reporte) => {
-              const fecha = new Date(reporte.timestamp_completado).toLocaleString('es-CL', {
+              const activo = reporte.activo as { nombre?: string } | undefined
+              const usuario = reporte.usuario as { nombre_completo?: string } | undefined
+              const fecha = new Date(reporte.timestamp_completado as string).toLocaleString('es-CL', {
                 day: '2-digit',
                 month: 'short',
                 year: 'numeric',
@@ -572,8 +576,8 @@ async function cargarActivos() {
 
               return (
                 <button
-                  key={reporte.id}
-                  onClick={() => router.push(`/dashboard/reportes/${reporte.id}`)}
+                  key={String(reporte.id)}
+                  onClick={() => router.push(`/dashboard/reportes/${String(reporte.id)}`)}
                   className="w-full p-6 hover:bg-gray-50 transition-colors text-left"
                 >
                   <div className="flex items-center justify-between">
@@ -593,21 +597,21 @@ async function cargarActivos() {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-1">
                           <h3 className="font-semibold text-gray-900">
-                            {reporte.activo?.nombre || 'Grúa Desconocida'}
+                            {activo?.nombre || 'Grúa Desconocida'}
                           </h3>
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                            reporte.tiene_problemas 
+                            Boolean(reporte.tiene_problemas) 
                               ? 'bg-red-100 text-red-700' 
                               : 'bg-green-100 text-green-700'
                           }`}>
-                            Score: {reporte.score_cumplimiento}%
+                            Score: {Number(reporte.score_cumplimiento)}%
                           </span>
                         </div>
                         
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <span className="flex items-center gap-1">
                             <User className="w-3 h-3" />
-                            {reporte.usuario?.nombre_completo || 'Operador Desconocido'}
+                            {usuario?.nombre_completo || 'Operador Desconocido'}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
@@ -615,11 +619,11 @@ async function cargarActivos() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {reporte.duracion_minutos} min
+                            {Number(reporte.duracion_minutos)} min
                           </span>
-                          {reporte.turno && (
+                          {Boolean(reporte.turno) && (
                             <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">
-                              Turno {reporte.turno}
+                              Turno {String(reporte.turno)}
                             </span>
                           )}
                         </div>
@@ -630,12 +634,12 @@ async function cargarActivos() {
                     <div className="flex items-center gap-6 text-sm">
                       <div className="text-center">
                         <p className="text-gray-500">Items</p>
-                        <p className="font-semibold text-gray-900">{reporte.total_respuestas}</p>
+                        <p className="font-semibold text-gray-900">{Number(reporte.total_respuestas)}</p>
                       </div>
-                      {reporte.respuestas_malas > 0 && (
+                      {Number(reporte.respuestas_malas) > 0 && (
                         <div className="text-center">
                           <p className="text-gray-500">Problemas</p>
-                          <p className="font-semibold text-red-600">{reporte.respuestas_malas}</p>
+                          <p className="font-semibold text-red-600">{Number(reporte.respuestas_malas)}</p>
                         </div>
                       )}
                     </div>

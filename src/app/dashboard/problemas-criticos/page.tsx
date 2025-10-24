@@ -141,7 +141,7 @@ export default function ProblemasCriticosPage() {
     }))
 
     // HOJA 2: Detalle Grúas Afectadas por Problema
-    const datosGruasAfectadas: any[] = []
+    const datosGruasAfectadas: Array<Record<string, unknown>> = []
     problemasFiltrados.forEach((problema, index) => {
       const afectadas = gruasAfectadasArrays[index] || []
       afectadas.forEach(activo => {
@@ -346,7 +346,7 @@ export default function ProblemasCriticosPage() {
               </label>
               <select
                 value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value as any)}
+                onChange={(e) => setFiltroEstado(e.target.value as "CRITICA" | "ALTA" | "MEDIA" | "TODOS")}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="TODOS">Todos los niveles</option>
@@ -362,7 +362,7 @@ export default function ProblemasCriticosPage() {
               </label>
               <select
                 value={filtroTendencia}
-                onChange={(e) => setFiltroTendencia(e.target.value as any)}
+                onChange={(e) => setFiltroTendencia(e.target.value as "EMPEORANDO" | "MEJORANDO" | "ESTABLE" | "TODOS")}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="TODOS">Todas las tendencias</option>
@@ -563,7 +563,7 @@ export default function ProblemasCriticosPage() {
               <h3 className="text-sm font-semibold text-blue-900 mb-2">Recomendaciones Generales</h3>
               <ul className="text-sm text-blue-700 space-y-1">
                 <li>• Problemas con más del 50% de falla requieren intervención inmediata</li>
-                <li>• Problemas con tendencia "Empeorando" sugieren desgaste acelerado de componentes</li>
+                <li>• Problemas con tendencia &ldquo;Empeorando&rdquo; sugieren desgaste acelerado de componentes</li>
                 <li>• Si un problema afecta múltiples activos, considere revisar proveedor o procedimiento</li>
                 <li>• Las fotos de evidencia ayudan a diagnosticar la causa raíz del problema</li>
               </ul>

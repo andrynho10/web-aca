@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
-  Timer,
   TrendingUp,
   AlertTriangle,
   Clock,
@@ -22,7 +21,7 @@ import {
   EficienciaHorometro,
   EstadoHorometro
 } from '@/lib/horometros-service'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, Cell } from 'recharts'
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, Cell } from 'recharts'
 import { obtenerOperadoresHorometrosPendientes, OperadorHorometroPendiente } from '@/lib/horometros-service'
 import { supabase } from '@/lib/supabase'
 import ExportButton from '@/components/ExportButton'
@@ -518,7 +517,7 @@ export default function HorometrosPage() {
                     </div>
 
                     <div className="space-y-2">
-                    {operador.reportes_pendientes.map((reporte, idx) => {
+                    {operador.reportes_pendientes.map((reporte) => {
                         const diasPendiente = Math.floor(reporte.dias_pendiente)
                         const esUrgente = diasPendiente > 2
                         

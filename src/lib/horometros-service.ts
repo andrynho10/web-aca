@@ -95,7 +95,7 @@ export async function obtenerOperadoresHorometrosPendientes() {
       throw error
     }
     return data as OperadorHorometroPendiente[]
-  } catch (error) {
+  } catch {
     return []
   }
 }

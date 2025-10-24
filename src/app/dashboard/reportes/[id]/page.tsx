@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Image from 'next/image'
 import {
   ArrowLeft,
   Calendar,
@@ -608,10 +609,11 @@ export default function ReporteDetallePage() {
                                   onClick={() => setImagenAmpliada(foto.url_storage)}
                                   className="relative w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-colors"
                                 >
-                                  <img
+                                  <Image
                                     src={foto.url_storage}
                                     alt={`Foto ${idx + 1}`}
-                                    className="w-full h-full object-cover"
+                                    fill
+                                    className="object-cover"
                                   />
                                   <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 flex items-center justify-center transition-opacity">
                                     <ImageIcon className="w-5 h-5 text-white opacity-0 hover:opacity-100" />
@@ -662,12 +664,16 @@ export default function ReporteDetallePage() {
               ✕
             </button>
           </div>
-          <img
-            src={imagenAmpliada}
-            alt="Imagen ampliada"
-            className="max-w-full max-h-full object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="relative w-full h-full flex items-center justify-center">
+            <Image
+              src={imagenAmpliada}
+              alt="Imagen ampliada"
+              width={1200}
+              height={800}
+              className="max-w-full max-h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>
       )}
     </div>

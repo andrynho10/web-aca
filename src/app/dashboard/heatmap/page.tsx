@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Calendar } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { obtenerHeatmapGruas } from '@/lib/dashboard-service'
-import { Heatmap } from '@/components/Heatmap'
+import { Heatmap, HeatmapData } from '@/components/Heatmap'
 
 export default function HeatmapPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [heatmapData, setHeatmapData] = useState<any[]>([])
+  const [heatmapData, setHeatmapData] = useState<HeatmapData[]>([])
   const [dias, setDias] = useState(30)
 
   // Verificar autenticación al montar

@@ -90,7 +90,7 @@ export function calcularAntiguedad(fechaIngreso: string | Date | null | undefine
 /**
  * Exporta datos a un archivo Excel
  */
-export function exportarAExcel(data: any[], nombreArchivo: string, nombreHoja: string = 'Datos') {
+export function exportarAExcel(data: Array<Record<string, unknown>>, nombreArchivo: string, nombreHoja: string = 'Datos') {
   if (!data || data.length === 0) {
     alert('No hay datos para exportar')
     return
@@ -118,7 +118,7 @@ export function exportarAExcel(data: any[], nombreArchivo: string, nombreHoja: s
  * Exporta datos a un archivo Excel con múltiples hojas
  */
 export function exportarAExcelMultiplesHojas(
-  hojas: Array<{ nombre: string; datos: any[] }>,
+  hojas: Array<{ nombre: string; datos: Array<Record<string, unknown>> }>,
   nombreArchivo: string
 ) {
   if (!hojas || hojas.length === 0) {
@@ -153,7 +153,7 @@ export function exportarAExcelMultiplesHojas(
 /**
  * Exporta datos a un archivo CSV
  */
-export function exportarACSV(data: any[], nombreArchivo: string) {
+export function exportarACSV(data: Array<Record<string, unknown>>, nombreArchivo: string) {
   if (!data || data.length === 0) {
     alert('No hay datos para exportar')
     return

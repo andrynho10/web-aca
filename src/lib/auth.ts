@@ -25,8 +25,9 @@ export async function loginSupervisor(email: string, password: string) {
     }
 
     return { success: true, usuario }
-  } catch (error: any) {
-    return { success: false, error: error.message }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+    return { success: false, error: errorMessage }
   }
 }
 

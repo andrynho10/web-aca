@@ -163,7 +163,6 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
 
     const totalPreguntas = reporte.total_respuestas
     const totalMalas = reporte.respuestas_malas
-    const totalBuenas = totalPreguntas - totalMalas
 
     pdf.text(`Total de preguntas: ${totalPreguntas}`, margin, yPosition)
     yPosition += 8
@@ -373,7 +372,7 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
 
     // === PIE DE PÁGINA ===
     // Obtenemos el número total de páginas accediendo a la información interna
-    const totalPages = (pdf.internal as any).pages?.length - 1 || 1
+    const totalPages = (pdf.internal as { pages?: unknown[] }).pages?.length ? (pdf.internal as { pages: unknown[] }).pages.length - 1 : 1
     for (let i = 1; i <= totalPages; i++) {
       pdf.setPage(i)
       pdf.setFontSize(8)

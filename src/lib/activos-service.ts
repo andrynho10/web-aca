@@ -53,9 +53,10 @@ export async function cambiarEstadoActivo(
     
     if (error) throw error
     return { success: true, data }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error cambiando estado:', error)
-    return { success: false, error: error.message }
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+    return { success: false, error: errorMessage }
   }
 }
 
@@ -215,11 +216,11 @@ export async function obtenerResumenUsoActivosRPC() {
     }
 
     // Transformar datos de 30 días y agregar horas de 7 días
-    return data30.map((item: any) => ({
+    return data30.map((item: Record<string, unknown>) => ({
       activoId: item.activo_id,
       nombre: item.activo_nombre,
       horasUso30: Number(item.total_horas_uso || 0),
-      horasUso7: horasUso7Map.get(item.activo_id) || 0,
+      horasUso7: horasUso7Map.get(Number(item.activo_id)) || 0,
       inspecciones30: Number(item.total_inspecciones || 0),
       problemas30: Number(item.inspecciones_con_problemas || 0),
       horometrosPendientes: 0
@@ -266,9 +267,10 @@ export async function crearActivo(input: CrearActivoInput) {
 
     if (error) throw error
     return { success: true, data }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creando activo:', error)
-    return { success: false, error: error.message }
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+    return { success: false, error: errorMessage }
   }
 }
 
@@ -283,9 +285,10 @@ export async function actualizarActivo(activoId: number, input: ActualizarActivo
 
     if (error) throw error
     return { success: true, data }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error actualizando activo:', error)
-    return { success: false, error: error.message }
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+    return { success: false, error: errorMessage }
   }
 }
 
@@ -298,9 +301,10 @@ export async function eliminarActivo(activoId: number) {
 
     if (error) throw error
     return { success: true }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error eliminando activo:', error)
-    return { success: false, error: error.message }
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+    return { success: false, error: errorMessage }
   }
 }
 

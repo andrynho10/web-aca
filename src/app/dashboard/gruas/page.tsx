@@ -29,7 +29,7 @@ type DialogType = 'estado' | 'crear' | 'editar' | 'eliminar' | null
 export default function GruasPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [usuario, setUsuario] = useState<any>(null)
+  const [usuario, setUsuario] = useState<{ id: string; rol: string } | null>(null)
   const [activos, setActivos] = useState<ActivoConEstado[]>([])
   const [resumenUso, setResumenUso] = useState<ResumenUsoActivo[]>([])
   const [dialogType, setDialogType] = useState<DialogType>(null)

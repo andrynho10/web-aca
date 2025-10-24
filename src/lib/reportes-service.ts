@@ -76,7 +76,7 @@ export async function obtenerReporteDetalle(reporteId: string): Promise<ReporteD
       .single()
 
     if (error) throw error
-    return data as any
+    return data as ReporteDetalle
   } catch (error) {
     console.error('Error obteniendo detalle del reporte:', error)
     return null

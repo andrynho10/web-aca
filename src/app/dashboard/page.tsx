@@ -11,7 +11,6 @@ import {
   TrendingUp,
   Users,
   Timer,
-  Calendar,
   RefreshCw,
   Menu,
   X,
@@ -27,7 +26,7 @@ import {
   obtenerTopProblemas
 } from '@/lib/dashboard-service'
 import { KPIsDashboard } from '@/lib/supabase'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { obtenerResumenUsoActivosRPC, ResumenUsoActivo } from '@/lib/activos-service'
 import { obtenerTodosLosOperadores } from '@/lib/operadores-service'
@@ -199,12 +198,12 @@ export default function DashboardPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [actualizando, setActualizando] = useState(false)
-  const [usuario, setUsuario] = useState<any>(null)
+  const [usuario, setUsuario] = useState<{ id: string; rol: string; nombre_completo: string } | null>(null)
   const [kpis, setKpis] = useState<KPIsDashboard | null>(null)
-  const [tendencia, setTendencia] = useState<any[]>([])
-  const [turnos, setTurnos] = useState<any>(null)
-  const [topGruas, setTopGruas] = useState<any[]>([])
-  const [topProblemas, setTopProblemas] = useState<any[]>([])
+  const [tendencia, setTendencia] = useState<Array<Record<string, unknown>>>([])
+  const [turnos, setTurnos] = useState<Record<string, unknown> | null>(null)
+  const [topGruas, setTopGruas] = useState<Array<Record<string, unknown>>>([])
+  const [topProblemas, setTopProblemas] = useState<Array<Record<string, unknown>>>([])
   const [ultimaActualizacion, setUltimaActualizacion] = useState<Date>(new Date())
   const [resumenUsoActivos, setResumenUsoActivos] = useState<ResumenUsoActivo[]>([])
   const [reportesRecientes, setReportesRecientes] = useState<ReporteReciente[]>([])
@@ -215,12 +214,12 @@ export default function DashboardPage() {
   const tendenciaDataset = useMemo(() => {
     return tendencia
       .map((item) => {
-        const totalInspecciones = Number((item as any)?.total_inspecciones ?? 0) || 0
+        const totalInspecciones = Number(item.total_inspecciones ?? 0) || 0
         const rawProblemas =
           Number(
-            (item as any)?.inspecciones_con_problemas ??
-            (item as any)?.reportes_con_problemas ??
-            (item as any)?.total_con_problemas ??
+            item.inspecciones_con_problemas ??
+            item.reportes_con_problemas ??
+            item.total_con_problemas ??
             0
           ) || 0
         const porcentajeProblemas =
@@ -230,17 +229,16 @@ export default function DashboardPage() {
 
         return {
           ...item,
+          fecha: String(item.fecha || ''),
           total_inspecciones: totalInspecciones,
-          score_promedio: Number((item as any)?.score_promedio ?? 0) || 0,
+          score_promedio: Number(item.score_promedio ?? 0) || 0,
           porcentaje_problemas: porcentajeProblemas,
           inspecciones_con_problemas: rawProblemas
         }
       })
       .sort((a, b) => {
         // Ordenar por fecha ascendente (más antigua a más reciente)
-        const fechaA = (a as any).fecha || ''
-        const fechaB = (b as any).fecha || ''
-        return fechaA.localeCompare(fechaB)
+        return a.fecha.localeCompare(b.fecha)
       })
   }, [tendencia])
 
@@ -415,23 +413,27 @@ export default function DashboardPage() {
       ])
 
       // HOJA 1: REPORTES (Prioridad máxima)
-      const reportes = (reportesData || []).map((r: any) => ({
+      const reportes = (reportesData || []).map((r: Record<string, unknown>) => {
+        const activo = r.activo as { nombre?: string } | undefined
+        const usuario = r.usuario as { nombre_completo?: string; rut?: string; centro_costo?: string } | undefined
+        return {
         'ID Reporte': r.id,
-        'Fecha/Hora Completado': formatearFechaExcel(r.timestamp_completado),
-        'Grúa': r.activo?.nombre || '-',
-        'Operador': r.usuario?.nombre_completo || '-',
-        'RUT Operador': r.usuario?.rut || '-',
-        'Centro de Costo': r.usuario?.centro_costo || '-',
+        'Fecha/Hora Completado': formatearFechaExcel(r.timestamp_completado as string),
+        'Grúa': activo?.nombre || '-',
+        'Operador': usuario?.nombre_completo || '-',
+        'RUT Operador': usuario?.rut || '-',
+        'Centro de Costo': usuario?.centro_costo || '-',
         'Turno': r.turno ? `Turno ${r.turno}` : '-',
         'Duración (min)': r.duracion_minutos || 0,
-        'Score (%)': formatearPorcentaje(r.score_cumplimiento || 0, 2),
+        'Score (%)': formatearPorcentaje(Number(r.score_cumplimiento) || 0, 2),
         '¿Tiene Problemas?': r.tiene_problemas ? 'Sí' : 'No',
         'Total Respuestas': r.total_respuestas || 0,
         'Respuestas Malas': r.respuestas_malas || 0,
         'Horómetro Inicial (h)': r.horometro_inicial || '-',
         'Horómetro Final (h)': r.horometro_final || '-',
-        'Horas de Uso': r.horas_uso?.toFixed(2) || '-'
-      }))
+        'Horas de Uso': typeof r.horas_uso === 'number' ? r.horas_uso.toFixed(2) : '-'
+        }
+      })
 
       // HOJA 2: KPIs GENERALES
       const kpisHoja = kpisData ? [{
@@ -448,21 +450,21 @@ export default function DashboardPage() {
       }] : []
 
       // HOJA 3: TOP GRÚAS PROBLEMÁTICAS
-      const gruasProblematicas = (gruasProblematicasData || []).map((g: any) => ({
+      const gruasProblematicas = (gruasProblematicasData || []).map((g: Record<string, unknown>) => ({
         'Grúa': g.activo_nombre,
         'Total Inspecciones': g.total_inspecciones || g.total_reportes || 0,
         'Inspecciones con Problemas': g.inspecciones_con_problemas || g.reportes_con_problemas || 0,
-        '% Problemas': formatearPorcentaje(g.porcentaje_problemas || 0, 1),
-        'Score Promedio': formatearPorcentaje(g.score_promedio || 0, 1),
-        'Última Inspección': g.ultima_inspeccion ? formatearFechaExcel(g.ultima_inspeccion) : '-'
+        '% Problemas': formatearPorcentaje(Number(g.porcentaje_problemas) || 0, 1),
+        'Score Promedio': formatearPorcentaje(Number(g.score_promedio) || 0, 1),
+        'Última Inspección': g.ultima_inspeccion ? formatearFechaExcel(g.ultima_inspeccion as string) : '-'
       }))
 
       // HOJA 4: TOP PROBLEMAS DETECTADOS
-      const problemasDetectados = (problemasData || []).map((p: any) => ({
+      const problemasDetectados = (problemasData || []).map((p: Record<string, unknown>) => ({
         'Problema/Ítem': p.pregunta_texto || p.texto_pregunta || '-',
         'Categoría': p.categoria_nombre || '-',
         'Veces Detectado': p.veces_detectado || p.total_fallo || 0,
-        '% Ocurrencia': formatearPorcentaje(p.porcentaje_ocurrencia || p.porcentaje_fallo || 0, 1),
+        '% Ocurrencia': formatearPorcentaje(Number(p.porcentaje_ocurrencia) || Number(p.porcentaje_fallo) || 0, 1),
         'Grúas Afectadas': p.gruas_afectadas || 0
       }))
 
@@ -524,23 +526,27 @@ export default function DashboardPage() {
 
       const reportesData = await obtenerReportesConFiltros(fechaDesde)
 
-      const reportes = (reportesData || []).map((r: any) => ({
+      const reportes = (reportesData || []).map((r: Record<string, unknown>) => {
+        const activo = r.activo as { nombre?: string } | undefined
+        const usuario = r.usuario as { nombre_completo?: string; rut?: string; centro_costo?: string } | undefined
+        return {
         'ID Reporte': r.id,
-        'Fecha/Hora Completado': formatearFechaExcel(r.timestamp_completado),
-        'Grúa': r.activo?.nombre || '-',
-        'Operador': r.usuario?.nombre_completo || '-',
-        'RUT Operador': r.usuario?.rut || '-',
-        'Centro de Costo': r.usuario?.centro_costo || '-',
+        'Fecha/Hora Completado': formatearFechaExcel(r.timestamp_completado as string),
+        'Grúa': activo?.nombre || '-',
+        'Operador': usuario?.nombre_completo || '-',
+        'RUT Operador': usuario?.rut || '-',
+        'Centro de Costo': usuario?.centro_costo || '-',
         'Turno': r.turno ? `Turno ${r.turno}` : '-',
         'Duración (min)': r.duracion_minutos || 0,
-        'Score (%)': formatearPorcentaje(r.score_cumplimiento || 0, 2),
+        'Score (%)': formatearPorcentaje(Number(r.score_cumplimiento) || 0, 2),
         '¿Tiene Problemas?': r.tiene_problemas ? 'Sí' : 'No',
         'Total Respuestas': r.total_respuestas || 0,
         'Respuestas Malas': r.respuestas_malas || 0,
         'Horómetro Inicial (h)': r.horometro_inicial || '-',
         'Horómetro Final (h)': r.horometro_final || '-',
-        'Horas de Uso': r.horas_uso?.toFixed(2) || '-'
-      }))
+        'Horas de Uso': typeof r.horas_uso === 'number' ? r.horas_uso.toFixed(2) : '-'
+        }
+      })
 
       const nombreArchivo = generarNombreArchivo('reportes_dashboard', 'csv')
       exportarACSV(reportes, nombreArchivo)
@@ -798,13 +804,13 @@ export default function DashboardPage() {
                     <div className="flex items-center">
                       <Forklift className="w-5 h-5 text-gray-400 mr-3" />
                       <div>
-                        <p className="font-medium text-gray-900">{grua.activo_nombre}</p>
-                        <p className="text-sm text-gray-500">{grua.total_reportes} reportes</p>
+                        <p className="font-medium text-gray-900">{String(grua.activo_nombre)}</p>
+                        <p className="text-sm text-gray-500">{String(grua.total_reportes)} reportes</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-red-600">{grua.reportes_con_problemas} Reportes con Problemas</p>
-                      <p className="text-sm text-gray-500">{grua.porcentaje_problemas}%</p>
+                      <p className="font-semibold text-red-600">{String(grua.reportes_con_problemas)} Reportes con Problemas</p>
+                      <p className="text-sm text-gray-500">{Number(grua.porcentaje_problemas)}%</p>
                       <button
                         onClick={() => {
                           const activoId = grua.activo_id ?? grua.id
@@ -885,26 +891,26 @@ export default function DashboardPage() {
           {turnos && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[1, 2, 3].map((turno) => {
-                const data = turnos[`turno_${turno}`]
+                const data = turnos?.[`turno_${turno}`] as Record<string, unknown> | undefined
                 if (!data) return null
                 return (
                   <div key={turno} className="p-4 bg-gray-50 rounded">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-medium text-gray-900">Turno {turno}</h3>
-                      <span className="text-sm text-gray-500">{data.total_inspecciones} inspecciones</span>
+                      <span className="text-sm text-gray-500">{String(data.total_inspecciones)} inspecciones</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
                         <p className="text-gray-500">Score</p>
-                        <p className="font-semibold">{data.score_promedio}%</p>
+                        <p className="font-semibold">{String(data.score_promedio)}%</p>
                       </div>
                       <div>
                         <p className="text-gray-500">Reportes con Problemas</p>
-                        <p className="font-semibold text-red-600">{data.con_problemas}</p>
+                        <p className="font-semibold text-red-600">{String(data.con_problemas)}</p>
                       </div>
                       <div>
                         <p className="text-gray-500">Horas Uso</p>
-                        <p className="font-semibold">{data.horas_uso}h</p>
+                        <p className="font-semibold">{String(data.horas_uso)}h</p>
                       </div>
                     </div>
                   </div>
@@ -931,18 +937,18 @@ export default function DashboardPage() {
               topProblemas.map((problema, idx) => (
                 <div key={idx} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded">
                   <div className="flex-1">
-                    <p className="text-sm text-gray-900">{problema.texto_pregunta}</p>
+                    <p className="text-sm text-gray-900">{String(problema.texto_pregunta)}</p>
                   </div>
                   <div className="flex items-center gap-4 ml-4">
-                    <span className="text-sm text-gray-500">{problema.total_fallo} fallos</span>
+                    <span className="text-sm text-gray-500">{String(problema.total_fallo)} fallos</span>
                     <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-red-600 h-2 rounded-full" 
-                        style={{ width: `${problema.porcentaje_fallo}%` }}
+                      <div
+                        className="bg-red-600 h-2 rounded-full"
+                        style={{ width: `${Number(problema.porcentaje_fallo)}%` }}
                       ></div>
                     </div>
                     <span className="text-sm font-semibold text-red-600 w-12 text-right">
-                      {problema.porcentaje_fallo}%
+                      {Number(problema.porcentaje_fallo)}%
                     </span>
                   </div>
                 </div>
