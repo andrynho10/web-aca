@@ -62,7 +62,6 @@ export default function ProblemasCriticosPage() {
     }
 
     await cargarDatos()
-    setLoading(false)
   }, [router, cargarDatos])
 
   // Verificar autenticación al montar
@@ -70,12 +69,15 @@ export default function ProblemasCriticosPage() {
     checkAuthAndLoad()
   }, [checkAuthAndLoad])
 
-  // Recargar datos cuando cambia el período
+  // Recargar datos cuando cambia el período (excluyendo la primera carga)
   useEffect(() => {
-    if (!loading) {
+    // Solo ejecutar cuando dias cambie, no en el primer render
+    const isFirstRender = problemas.length === 0 && loading
+    if (!isFirstRender) {
       cargarDatos()
     }
-  }, [cargarDatos, loading])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dias])
 
   async function seleccionarProblema(preguntaId: number) {
     if (problemaSeleccionado === preguntaId) {

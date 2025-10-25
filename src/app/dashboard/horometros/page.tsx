@@ -85,7 +85,6 @@ export default function HorometrosPage() {
 
     setUsuario(user)
     await cargarDatos()
-    setLoading(false)
   }, [router, cargarDatos])
 
   // Verificar autenticación al montar
@@ -93,13 +92,15 @@ export default function HorometrosPage() {
     checkAuthAndLoad()
   }, [checkAuthAndLoad])
 
-  // Recargar datos cuando cambia el período
+  // Recargar datos cuando cambia el período (excluyendo la primera carga)
   useEffect(() => {
-    // Solo recargar si ya pasó la carga inicial
-    if (!loading) {
+    // Solo ejecutar cuando dias cambie, no en el primer render
+    const isFirstRender = correlacion.length === 0 && loading
+    if (!isFirstRender) {
       cargarDatos()
     }
-  }, [cargarDatos, loading])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dias])
 
   // ========================================
   // REALTIME SUBSCRIPTION para horómetros pendientes

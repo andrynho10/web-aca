@@ -29,7 +29,6 @@ export default function HeatmapPage() {
     }
 
     await cargarHeatmap()
-    setLoading(false)
   }, [router, cargarHeatmap])
 
   // Verificar autenticación al montar
@@ -37,12 +36,15 @@ export default function HeatmapPage() {
     checkAuthAndLoad()
   }, [checkAuthAndLoad])
 
-  // Recargar datos cuando cambia el período
+  // Recargar datos cuando cambia el período (excluyendo la primera carga)
   useEffect(() => {
-    if (!loading) {
+    // Solo ejecutar cuando dias cambie, no en el primer render
+    const isFirstRender = heatmapData.length === 0 && loading
+    if (!isFirstRender) {
       cargarHeatmap()
     }
-  }, [cargarHeatmap, loading])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dias])
 
   function handleCellClick(activoId: number, fecha: string) {
     // Navegar a lista de reportes filtrada por grúa y fecha

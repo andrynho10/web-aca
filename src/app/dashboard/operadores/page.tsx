@@ -56,7 +56,6 @@ export default function OperadoresPage() {
     }
 
     await cargarDatos()
-    setLoading(false)
   }, [router, cargarDatos])
 
   // Verificar autenticación al montar
@@ -64,12 +63,15 @@ export default function OperadoresPage() {
     checkAuthAndLoad()
   }, [checkAuthAndLoad])
 
-  // Recargar datos cuando cambia el período
+  // Recargar datos cuando cambia el período (excluyendo la primera carga)
   useEffect(() => {
-    if (!loading) {
+    // Solo ejecutar cuando dias cambie, no en el primer render
+    const isFirstRender = operadores.length === 0 && loading
+    if (!isFirstRender) {
       cargarDatos()
     }
-  }, [cargarDatos, loading])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dias])
 
   // Funciones de exportación
   function exportarOperadoresExcel() {
