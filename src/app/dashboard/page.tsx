@@ -185,7 +185,7 @@ function ReportesRecientesSidebar({ reportes, loading, actualizando }: { reporte
       <div className="p-3 border-t border-gray-200 bg-gray-50">
         <button
           onClick={() => router.push('/dashboard/reportes')}
-          className="w-full text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline"
+          className="w-full text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline cursor-pointer"
         >
           Ver todos los reportes →
         </button>
@@ -587,7 +587,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => cargarDatos()}
                   disabled={actualizando}
-                  className="text-xs text-blue-600 hover:text-blue-700 disabled:text-gray-400 flex items-center gap-1"
+                  className="text-xs text-blue-600 hover:text-blue-700 disabled:text-gray-400 flex items-center gap-1 cursor-pointer hover:underline"
                 >
                   <RefreshCw className={`w-3 h-3 ${actualizando ? 'animate-spin' : ''}`} />
                   {actualizando ? 'Actualizando...' : 'Actualizar'}
@@ -601,7 +601,7 @@ export default function DashboardPage() {
                 {/* Botón de Gestión de Grúas */}
                 <button
                   onClick={() => router.push('/dashboard/gruas')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-blue-600 text-white text-base font-normal rounded-md hover:bg-blue-700 transition-colors"
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-blue-600 text-white text-base font-normal rounded-md hover:bg-blue-700 transition-colors cursor-pointer"
                 >
                   <Forklift className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="whitespace-nowrap">Gestión de Grúas</span>
@@ -609,7 +609,7 @@ export default function DashboardPage() {
                 {/* Botón Reportes */}
                 <button
                   onClick={() => router.push('/dashboard/reportes')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-cyan-600 text-white text-base font-normal rounded-md hover:bg-cyan-700 transition-colors"
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-cyan-600 text-white text-base font-normal rounded-md hover:bg-cyan-700 transition-colors cursor-pointer"
                 >
                   <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="whitespace-nowrap">Reportes</span>
@@ -617,7 +617,7 @@ export default function DashboardPage() {
                 {/* Botón Heatmap */}
                 <button
                   onClick={() => router.push('/dashboard/heatmap')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-purple-600 text-white text-base font-normal rounded-md hover:bg-purple-700 transition-colors"
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-purple-600 text-white text-base font-normal rounded-md hover:bg-purple-700 transition-colors cursor-pointer"
                 >
                   <BarChart3 className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="whitespace-nowrap">Heatmap</span>
@@ -625,7 +625,7 @@ export default function DashboardPage() {
                 {/* Botón Horómetros */}
                 <button
                   onClick={() => router.push('/dashboard/horometros')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-green-600 text-white text-base font-normal rounded-md hover:bg-green-700 transition-colors"
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-green-600 text-white text-base font-normal rounded-md hover:bg-green-700 transition-colors cursor-pointer"
                 >
                   <Timer className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="whitespace-nowrap">Horómetros</span>
@@ -633,7 +633,7 @@ export default function DashboardPage() {
                 {/* Botón Operadores */}
                 <button
                   onClick={() => router.push('/dashboard/operadores')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-orange-600 text-white text-base font-normal rounded-md hover:bg-orange-700 transition-colors"
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-orange-600 text-white text-base font-normal rounded-md hover:bg-orange-700 transition-colors cursor-pointer"
                 >
                   <Users className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="whitespace-nowrap">Operadores</span>
@@ -641,7 +641,7 @@ export default function DashboardPage() {
                 {/* Botón Problemas Críticos */}
                 <button
                   onClick={() => router.push('/dashboard/problemas-criticos')}
-                  className="flex items-center justify-center w-[180px] px-4 py-2 bg-red-600 text-white text-base font-normal rounded-md hover:bg-red-700 transition-colors"
+                  className="flex items-center justify-center w-[180px] px-4 py-2 bg-red-600 text-white text-base font-normal rounded-md hover:bg-red-700 transition-colors cursor-pointer"
                 >
                   <AlertTriangle className="w-4 h-4 mr-2 flex-shrink-0" />
                   <span className="whitespace-nowrap">Problemas Críticos</span>
@@ -654,7 +654,7 @@ export default function DashboardPage() {
               {/* Botón Cerrar Sesión (solo desktop) */}
               <button
                 onClick={handleLogout}
-                className="hidden lg:block px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                className="hidden lg:block px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 cursor-pointer"
               >
                 Cerrar Sesión
               </button>
@@ -662,7 +662,7 @@ export default function DashboardPage() {
               {/* Botón Hamburguesa (solo móvil/tablet) */}
               <button
                 onClick={() => setMenuMovilAbierto(true)}
-                className="lg:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                className="lg:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer"
                 aria-label="Abrir menú"
               >
                 <Menu className="w-6 h-6" />
@@ -719,7 +719,7 @@ export default function DashboardPage() {
           {/* Contenido Principal */}
           <div className="flex-1 min-w-0">
         {/* KPIs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <KPICard
             title="Reportes Hoy"
             value={kpis?.total_reportes_hoy || 0}
@@ -727,14 +727,6 @@ export default function DashboardPage() {
             icon={BarChart3}
             clickable={true}
             onClick={() => router.push('/dashboard/reportes')}
-          />
-          <KPICard
-            title="Score Promedio"
-            value={`${kpis?.score_promedio_global || 0}%`}
-            subtitle="Últimos 30 días"
-            icon={TrendingUp}
-            clickable={true}
-            onClick={() => router.push('/dashboard/heatmap')}
           />
           <KPICard
             title="Reportes con Problemas"
@@ -789,7 +781,7 @@ export default function DashboardPage() {
               {topGruas.length > 5 && (
                 <button
                   onClick={() => setMostrarTodasGruasProblematicas(!mostrarTodasGruasProblematicas)}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline"
                 >
                   {mostrarTodasGruasProblematicas ? 'Ver menos' : `Ver todas (${topGruas.length})`}
                 </button>
@@ -818,7 +810,7 @@ export default function DashboardPage() {
                             router.push(`/dashboard/reportes?activo=${activoId}&problemas=true`)
                           }
                         }}
-                        className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline"
                       >
                         Ver reportes
                       </button>
@@ -836,7 +828,7 @@ export default function DashboardPage() {
               {topUso.length > 5 && (
                 <button
                   onClick={() => setMostrarTodasGruas(!mostrarTodasGruas)}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline"
                 >
                   {mostrarTodasGruas ? 'Ver menos' : `Ver todas (${topUso.length})`}
                 </button>
@@ -866,7 +858,7 @@ export default function DashboardPage() {
                     </div>
                     <button
                       onClick={() => router.push(`/dashboard/reportes?activo=${item.activoId}`)}
-                      className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      className="mt-2 text-xs text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline"
                     >
                       Ver reportes
                     </button>
@@ -883,9 +875,9 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-gray-900">Análisis por Turno (30 días)</h2>
             <button
               onClick={() => router.push('/dashboard/reportes?problemas=true')}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline"
             >
-              Ver reportes con problemas
+              Ver reportes con problemas →
             </button>
           </div>
           {turnos && (
@@ -901,15 +893,15 @@ export default function DashboardPage() {
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
-                        <p className="text-gray-500">Score</p>
+                        <p className="text-gray-500 mb-1">Score</p>
                         <p className="font-semibold">{String(data.score_promedio)}%</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Reportes con Problemas</p>
+                        <p className="text-gray-500 mb-1 leading-tight">Reportes con Problemas</p>
                         <p className="font-semibold text-red-600">{String(data.con_problemas)}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Horas Uso</p>
+                        <p className="text-gray-500 mb-1">Horas Uso</p>
                         <p className="font-semibold">{String(data.horas_uso)}h</p>
                       </div>
                     </div>
@@ -925,9 +917,9 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold text-gray-900">Top 10 Problemas Más Frecuentes (30 días)</h2>
             <button
               onClick={() => router.push('/dashboard/problemas-criticos')}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer hover:underline"
             >
-              Ver análisis completo
+              Ver análisis completo →
             </button>
           </div>
           <div className="space-y-2">
@@ -1000,7 +992,7 @@ export default function DashboardPage() {
                   router.push('/dashboard/gruas')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
               >
                 <Forklift className="w-5 h-5 mr-3" />
                 <span className="font-medium">Gestión de Grúas</span>
@@ -1011,7 +1003,7 @@ export default function DashboardPage() {
                   router.push('/dashboard/reportes')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+                className="flex items-center px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors cursor-pointer"
               >
                 <FileText className="w-5 h-5 mr-3" />
                 <span className="font-medium">Reportes</span>
@@ -1022,7 +1014,7 @@ export default function DashboardPage() {
                   router.push('/dashboard/heatmap')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                className="flex items-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer"
               >
                 <BarChart3 className="w-5 h-5 mr-3" />
                 <span className="font-medium">Heatmap</span>
@@ -1033,7 +1025,7 @@ export default function DashboardPage() {
                   router.push('/dashboard/horometros')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="flex items-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
               >
                 <Timer className="w-5 h-5 mr-3" />
                 <span className="font-medium">Horómetros</span>
@@ -1044,7 +1036,7 @@ export default function DashboardPage() {
                   router.push('/dashboard/operadores')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                className="flex items-center px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors cursor-pointer"
               >
                 <Users className="w-5 h-5 mr-3" />
                 <span className="font-medium">Operadores</span>
@@ -1055,7 +1047,7 @@ export default function DashboardPage() {
                   router.push('/dashboard/problemas-criticos')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex items-center px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
               >
                 <AlertTriangle className="w-5 h-5 mr-3" />
                 <span className="font-medium">Problemas Críticos</span>
@@ -1067,7 +1059,7 @@ export default function DashboardPage() {
                     setMenuMovilAbierto(false)
                     handleLogout()
                   }}
-                  className="w-full flex items-center px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="w-full flex items-center px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
                 >
                   <span className="font-medium">Cerrar Sesión</span>
                 </button>

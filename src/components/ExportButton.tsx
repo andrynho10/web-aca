@@ -36,7 +36,7 @@ export default function ExportButton({
 
   const Icon = icon === 'excel' ? FileSpreadsheet : FileText
 
-  const baseClasses = 'inline-flex items-center px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+  const baseClasses = 'inline-flex items-center px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
 
   const variantClasses = {
     primary: 'bg-green-600 text-white hover:bg-green-700',
