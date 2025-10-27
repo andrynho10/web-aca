@@ -404,7 +404,7 @@ export default function ReporteDetallePage() {
           <div className="flex items-center gap-4 mb-2">
             <button
               onClick={() => router.push('/dashboard')}
-              className="flex items-center text-gray-600 hover:text-gray-900"
+              className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Dashboard
@@ -412,7 +412,7 @@ export default function ReporteDetallePage() {
             <span className="text-gray-300">|</span>
             <button
               onClick={() => router.push('/dashboard/reportes')}
-              className="flex items-center text-gray-600 hover:text-gray-900"
+              className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver a Reportes

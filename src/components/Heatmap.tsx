@@ -104,7 +104,7 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
                         <button
                           key={`${grua}-${fecha}`}
                           onClick={() => celda && onCellClick?.(celda.activo_id, fecha)}
-                          className={`h-12 w-full border-b border-l border-gray-200 ${colorClass} hover:opacity-80 transition-opacity relative group`}
+                          className={`h-12 w-full border-b border-l border-gray-200 ${colorClass} hover:opacity-80 transition-opacity relative group ${celda ? 'cursor-pointer' : 'cursor-default'}`}
                           title={celda ? `${grua} - ${fechaCorta}\nScore: ${celda.score_promedio}%\nInspecciones: ${celda.total_inspecciones}` : 'Sin datos'}
                         >
                           {celda && (
@@ -112,15 +112,6 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
                               <span className="text-xs font-semibold text-white drop-shadow">
                                 {Math.round(celda.score_promedio)}
                               </span>
-                            </div>
-                          )}
-
-                          {/* Tooltip */}
-                          {celda && (
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none z-10">
-                              Score: {celda.score_promedio}%
-                              <br />
-                              {celda.total_inspecciones} inspección{celda.total_inspecciones > 1 ? 'es' : ''}
                             </div>
                           )}
                         </button>

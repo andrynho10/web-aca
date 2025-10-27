@@ -143,7 +143,7 @@ function ReportesRecientesSidebar({ reportes, loading, actualizando }: { reporte
                 <button
                   key={reporte.id}
                   onClick={() => router.push(`/dashboard/reportes/${reporte.id}`)}
-                  className={`w-full p-3 hover:bg-blue-50 text-left transition-all duration-200 ${
+                  className={`w-full p-3 hover:bg-blue-50 text-left transition-all duration-200 cursor-pointer ${
                     esReciente ? 'bg-blue-50/50' : ''
                   } ${index === 0 ? 'animate-fade-in' : ''}`}
                 >

@@ -335,14 +335,14 @@ export default function GruasPage() {
               />
               <button
                 onClick={abrirCrearGrua}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Nueva Grúa
               </button>
               <button
                 onClick={() => router.push('/dashboard')}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 cursor-pointer"
               >
                 Volver al Dashboard
               </button>
@@ -517,7 +517,7 @@ export default function GruasPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => abrirEditarGrua(activo)}
-                        className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 font-medium"
+                        className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 font-medium cursor-pointer"
                         title="Editar grúa"
                       >
                         <Edit className="w-4 h-4 mr-1" />
@@ -525,7 +525,7 @@ export default function GruasPage() {
                       </button>
                       <button
                         onClick={() => handleCambiarEstado(activo)}
-                        className={`flex items-center px-3 py-2 rounded-md font-medium ${
+                        className={`flex items-center px-3 py-2 rounded-md font-medium cursor-pointer ${
                           activo.es_operativa
                             ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                             : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -546,7 +546,7 @@ export default function GruasPage() {
                       </button>
                       <button
                         onClick={() => abrirEliminarGrua(activo)}
-                        className="flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 font-medium"
+                        className="flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 font-medium cursor-pointer"
                         title="Eliminar grúa"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />

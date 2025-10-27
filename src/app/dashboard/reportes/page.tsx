@@ -351,7 +351,7 @@ function ReportesContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => router.push('/dashboard')}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-2"
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-2 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Volver al Dashboard
@@ -517,13 +517,13 @@ function ReportesContent() {
           <div className="mt-4 flex gap-3">
             <button
               onClick={() => void aplicarFiltros()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium cursor-pointer"
             >
               Aplicar Filtros
             </button>
             <button
               onClick={handleLimpiarFiltros}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-medium"
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 font-medium cursor-pointer"
             >
               Limpiar
             </button>
@@ -577,7 +577,7 @@ function ReportesContent() {
                 <button
                   key={String(reporte.id)}
                   onClick={() => router.push(`/dashboard/reportes/${String(reporte.id)}`)}
-                  className="w-full p-6 hover:bg-gray-50 transition-colors text-left"
+                  className="w-full p-6 hover:bg-gray-50 transition-colors text-left cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 flex-1">
