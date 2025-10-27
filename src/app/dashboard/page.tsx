@@ -719,7 +719,7 @@ export default function DashboardPage() {
           {/* Contenido Principal */}
           <div className="flex-1 min-w-0">
         {/* KPIs Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <KPICard
             title="Reportes Hoy"
             value={kpis?.total_reportes_hoy || 0}
@@ -735,14 +735,6 @@ export default function DashboardPage() {
             icon={AlertTriangle}
             clickable={true}
             onClick={() => router.push('/dashboard/reportes?problemas=true')}
-          />
-          <KPICard
-            title="Horómetros Pendientes"
-            value={kpis?.horometros_pendientes || 0}
-            subtitle="Por cerrar"
-            icon={Clock}
-            clickable={true}
-            onClick={() => router.push('/dashboard/horometros#pendientes')}
           />
         </div>
 
