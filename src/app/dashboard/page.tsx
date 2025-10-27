@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import {
   BarChart3,
   AlertTriangle,
@@ -577,7 +578,16 @@ export default function DashboardPage() {
             {/* Sección Izquierda: Título e Info */}
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Panel de Supervisor</h1>
-              <p className="text-sm text-gray-600">TULSA S.A. - {usuario?.nombre_completo}</p>
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/icon.png"
+                  alt="TULSA Logo"
+                  width={20}
+                  height={20}
+                  className="object-contain"
+                />
+                <p className="text-sm text-gray-600">TULSA S.A. - {usuario?.nombre_completo}</p>
+              </div>
 
               {/* Indicador de Última Actualización */}
               <div className="flex items-center gap-2 mt-1">
