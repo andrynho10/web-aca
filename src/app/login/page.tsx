@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { loginSupervisor } from '@/lib/auth'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -50,8 +51,17 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">TULSA S.A.</h2>
-          <p className="mt-2 text-sm text-gray-600">Panel de Supervisor</p>
+          <div className="flex justify-center mb-6">
+            <Image
+              src="/logo-tulsa.png"
+              alt="Logo TULSA S.A."
+              width={200}
+              height={80}
+              priority
+              className="object-contain"
+            />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Panel de Supervisor</h2>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
@@ -73,7 +83,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="supervisor@test.com"
+                placeholder="Ejemplo: jperez@apptulsa.cl"
               />
             </div>
 
@@ -88,7 +98,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="password123"
+                placeholder="********"
               />
             </div>
           </div>
