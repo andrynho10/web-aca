@@ -468,27 +468,9 @@ export default function HorometrosPage() {
                 Operadores con Horómetros Pendientes
                 </h2>
             </div>
-            <div className="flex items-center gap-4">
-                <span className="text-2xl font-bold text-orange-600">
+            <span className="text-2xl font-bold text-orange-600">
                 {operadoresPendientes.reduce((acc, op) => acc + op.total_pendientes, 0)}
-                </span>
-                {operadoresPendientes.length > 0 && (
-                <>
-                  <ExportButton
-                      onExport={exportarOperadoresPendientesExcel}
-                      label="Exportar Excel"
-                      variant="primary"
-                      icon="excel"
-                  />
-                  <ExportButton
-                      onExport={exportarOperadoresPendientesCSV}
-                      label="Exportar CSV"
-                      variant="secondary"
-                      icon="csv"
-                  />
-                </>
-                )}
-            </div>
+            </span>
             </div>
         </div>
         
