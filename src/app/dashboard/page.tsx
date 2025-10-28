@@ -49,6 +49,7 @@ type ReporteReciente = {
   score_cumplimiento: number
   activo_nombre: string
   operador_nombre: string
+  horometro_pendiente: boolean
 }
 
 async function cargarReportesRecientes() {
@@ -67,7 +68,8 @@ async function cargarReportesRecientes() {
         tiene_problemas,
         score_cumplimiento,
         activo_nombre,
-        operador_nombre
+        operador_nombre,
+        horometro_pendiente
       `)
       .order('timestamp_completado', { ascending: false })
       .limit(10)
@@ -154,9 +156,17 @@ function ReportesRecientesSidebar({ reportes, loading, actualizando }: { reporte
                       <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
-                        {reporte.activo_nombre || 'Activo desconocido'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-gray-900 truncate">
+                          {reporte.activo_nombre || 'Activo desconocido'}
+                        </p>
+                        {reporte.horometro_pendiente && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 flex-shrink-0" title="Horómetro pendiente de completar">
+                            <Clock className="w-3 h-3" />
+                            H. Pendiente
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500 truncate">
                         {reporte.operador_nombre || 'Operador desconocido'}
                       </p>
@@ -211,6 +221,7 @@ export default function DashboardPage() {
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false)
   const [mostrarTodasGruas, setMostrarTodasGruas] = useState(false)
   const [mostrarTodasGruasProblematicas, setMostrarTodasGruasProblematicas] = useState(false)
+  const [navegando, setNavegando] = useState<string | null>(null)
 
   const tendenciaDataset = useMemo(() => {
     return tendencia
@@ -386,6 +397,11 @@ export default function DashboardPage() {
   async function handleLogout() {
     await logout()
     router.push('/login')
+  }
+
+  function navegarA(ruta: string) {
+    setNavegando(ruta)
+    router.push(ruta)
   }
 
   // Funciones de exportación
@@ -610,50 +626,80 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3">
                 {/* Botón de Gestión de Grúas */}
                 <button
-                  onClick={() => router.push('/dashboard/gruas')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-blue-600 text-white text-base font-normal rounded-md hover:bg-blue-700 transition-colors cursor-pointer"
+                  onClick={() => navegarA('/dashboard/gruas')}
+                  disabled={navegando !== null}
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-blue-600 text-white text-base font-normal rounded-md hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
-                  <Forklift className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {navegando === '/dashboard/gruas' ? (
+                    <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
+                  ) : (
+                    <Forklift className="w-4 h-4 mr-2 flex-shrink-0" />
+                  )}
                   <span className="whitespace-nowrap">Gestión de Grúas</span>
                 </button>
                 {/* Botón Reportes */}
                 <button
-                  onClick={() => router.push('/dashboard/reportes')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-cyan-600 text-white text-base font-normal rounded-md hover:bg-cyan-700 transition-colors cursor-pointer"
+                  onClick={() => navegarA('/dashboard/reportes')}
+                  disabled={navegando !== null}
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-cyan-600 text-white text-base font-normal rounded-md hover:bg-cyan-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
-                  <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {navegando === '/dashboard/reportes' ? (
+                    <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
+                  )}
                   <span className="whitespace-nowrap">Reportes</span>
                 </button>
                 {/* Botón Heatmap */}
                 <button
-                  onClick={() => router.push('/dashboard/heatmap')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-purple-600 text-white text-base font-normal rounded-md hover:bg-purple-700 transition-colors cursor-pointer"
+                  onClick={() => navegarA('/dashboard/heatmap')}
+                  disabled={navegando !== null}
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-purple-600 text-white text-base font-normal rounded-md hover:bg-purple-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
-                  <BarChart3 className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {navegando === '/dashboard/heatmap' ? (
+                    <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
+                  ) : (
+                    <BarChart3 className="w-4 h-4 mr-2 flex-shrink-0" />
+                  )}
                   <span className="whitespace-nowrap">Heatmap</span>
                 </button>
                 {/* Botón Horómetros */}
                 <button
-                  onClick={() => router.push('/dashboard/horometros')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-green-600 text-white text-base font-normal rounded-md hover:bg-green-700 transition-colors cursor-pointer"
+                  onClick={() => navegarA('/dashboard/horometros')}
+                  disabled={navegando !== null}
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-green-600 text-white text-base font-normal rounded-md hover:bg-green-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
-                  <Timer className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {navegando === '/dashboard/horometros' ? (
+                    <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
+                  ) : (
+                    <Timer className="w-4 h-4 mr-2 flex-shrink-0" />
+                  )}
                   <span className="whitespace-nowrap">Horómetros</span>
                 </button>
                 {/* Botón Operadores */}
                 <button
-                  onClick={() => router.push('/dashboard/operadores')}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-orange-600 text-white text-base font-normal rounded-md hover:bg-orange-700 transition-colors cursor-pointer"
+                  onClick={() => navegarA('/dashboard/operadores')}
+                  disabled={navegando !== null}
+                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-orange-600 text-white text-base font-normal rounded-md hover:bg-orange-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
-                  <Users className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {navegando === '/dashboard/operadores' ? (
+                    <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
+                  ) : (
+                    <Users className="w-4 h-4 mr-2 flex-shrink-0" />
+                  )}
                   <span className="whitespace-nowrap">Operadores</span>
                 </button>
                 {/* Botón Problemas Críticos */}
                 <button
-                  onClick={() => router.push('/dashboard/problemas-criticos')}
-                  className="flex items-center justify-center w-[180px] px-4 py-2 bg-red-600 text-white text-base font-normal rounded-md hover:bg-red-700 transition-colors cursor-pointer"
+                  onClick={() => navegarA('/dashboard/problemas-criticos')}
+                  disabled={navegando !== null}
+                  className="flex items-center justify-center w-[180px] px-4 py-2 bg-red-600 text-white text-base font-normal rounded-md hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
-                  <AlertTriangle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  {navegando === '/dashboard/problemas-criticos' ? (
+                    <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  )}
                   <span className="whitespace-nowrap">Problemas Críticos</span>
                 </button>
               </div>
@@ -962,6 +1008,25 @@ export default function DashboardPage() {
             />
           </div>
         </div>
+
+        {/* Footer con Créditos */}
+        <footer className="mt-12 pb-8">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-center sm:text-left">
+                  <p className="text-xs text-gray-500">
+                    © {new Date().getFullYear()} TULSA S.A. Todos los derechos reservados.
+                  </p>
+                </div>
+                <div className="text-center sm:text-right">
+                  <p className="text-xs text-gray-400">Desarrollado por</p>
+                  <p className="text-sm font-medium text-gray-600">Andrés Amaya Garcés</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* Menú Móvil Lateral */}
@@ -991,67 +1056,97 @@ export default function DashboardPage() {
             <nav className="flex flex-col p-4 space-y-3">
               <button
                 onClick={() => {
-                  router.push('/dashboard/gruas')
+                  navegarA('/dashboard/gruas')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                disabled={navegando !== null}
+                className="flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
               >
-                <Forklift className="w-5 h-5 mr-3" />
+                {navegando === '/dashboard/gruas' ? (
+                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                ) : (
+                  <Forklift className="w-5 h-5 mr-3" />
+                )}
                 <span className="font-medium">Gestión de Grúas</span>
               </button>
 
               <button
                 onClick={() => {
-                  router.push('/dashboard/reportes')
+                  navegarA('/dashboard/reportes')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors cursor-pointer"
+                disabled={navegando !== null}
+                className="flex items-center px-4 py-3 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
               >
-                <FileText className="w-5 h-5 mr-3" />
+                {navegando === '/dashboard/reportes' ? (
+                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                ) : (
+                  <FileText className="w-5 h-5 mr-3" />
+                )}
                 <span className="font-medium">Reportes</span>
               </button>
 
               <button
                 onClick={() => {
-                  router.push('/dashboard/heatmap')
+                  navegarA('/dashboard/heatmap')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer"
+                disabled={navegando !== null}
+                className="flex items-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
               >
-                <BarChart3 className="w-5 h-5 mr-3" />
+                {navegando === '/dashboard/heatmap' ? (
+                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                ) : (
+                  <BarChart3 className="w-5 h-5 mr-3" />
+                )}
                 <span className="font-medium">Heatmap</span>
               </button>
 
               <button
                 onClick={() => {
-                  router.push('/dashboard/horometros')
+                  navegarA('/dashboard/horometros')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+                disabled={navegando !== null}
+                className="flex items-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
               >
-                <Timer className="w-5 h-5 mr-3" />
+                {navegando === '/dashboard/horometros' ? (
+                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                ) : (
+                  <Timer className="w-5 h-5 mr-3" />
+                )}
                 <span className="font-medium">Horómetros</span>
               </button>
 
               <button
                 onClick={() => {
-                  router.push('/dashboard/operadores')
+                  navegarA('/dashboard/operadores')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors cursor-pointer"
+                disabled={navegando !== null}
+                className="flex items-center px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
               >
-                <Users className="w-5 h-5 mr-3" />
+                {navegando === '/dashboard/operadores' ? (
+                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                ) : (
+                  <Users className="w-5 h-5 mr-3" />
+                )}
                 <span className="font-medium">Operadores</span>
               </button>
 
               <button
                 onClick={() => {
-                  router.push('/dashboard/problemas-criticos')
+                  navegarA('/dashboard/problemas-criticos')
                   setMenuMovilAbierto(false)
                 }}
-                className="flex items-center px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+                disabled={navegando !== null}
+                className="flex items-center px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
               >
-                <AlertTriangle className="w-5 h-5 mr-3" />
+                {navegando === '/dashboard/problemas-criticos' ? (
+                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                ) : (
+                  <AlertTriangle className="w-5 h-5 mr-3" />
+                )}
                 <span className="font-medium">Problemas Críticos</span>
               </button>
 
