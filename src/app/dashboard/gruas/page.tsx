@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Forklift, Power, PowerOff, AlertCircle, CheckCircle, Timer, BarChart3, Plus, Edit, Trash2, X } from 'lucide-react'
+import { Forklift, Power, PowerOff, AlertCircle, CheckCircle, Timer, BarChart3, Plus, Edit, Trash2, X, History } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import {
   cambiarEstadoActivo,
@@ -14,7 +14,8 @@ import {
   eliminarActivo,
   CrearActivoInput,
   obtenerActivosConTiempoDesactivada,
-  ActivoConEstado
+  ActivoConEstado,
+  obtenerHistorialEstados
 } from '@/lib/activos-service'
 import ExportButton from '@/components/ExportButton'
 import {
@@ -24,7 +25,19 @@ import {
   formatearFechaExcel
 } from '@/lib/export-utils'
 
-type DialogType = 'estado' | 'crear' | 'editar' | 'eliminar' | null
+type DialogType = 'estado' | 'crear' | 'editar' | 'eliminar' | 'historial' | null
+
+type HistorialEstado = {
+  id: number
+  activo_id: number
+  fecha_cambio: string
+  es_operativa: boolean
+  usuario_cambio: string
+  motivo: string | null
+  usuarios: {
+    nombre_completo: string
+  } | null
+}
 
 export default function GruasPage() {
   const router = useRouter()
@@ -36,6 +49,8 @@ export default function GruasPage() {
   const [selectedActivo, setSelectedActivo] = useState<ActivoConEstado | null>(null)
   const [motivo, setMotivo] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
+  const [historial, setHistorial] = useState<HistorialEstado[]>([])
+  const [historialLoading, setHistorialLoading] = useState(false)
 
   // Estado para el formulario de crear/editar
   const [formData, setFormData] = useState<CrearActivoInput>({
@@ -227,6 +242,7 @@ export default function GruasPage() {
     setDialogType(null)
     setSelectedActivo(null)
     setMotivo('')
+    setHistorial([])
     setFormData({
       nombre: '',
       modelo: '',
@@ -235,6 +251,60 @@ export default function GruasPage() {
       es_operativa: true,
       horometro_actual: null
     })
+  }
+
+  async function abrirHistorial(activo: ActivoConEstado) {
+    setSelectedActivo(activo)
+    setDialogType('historial')
+    setHistorialLoading(true)
+
+    const historialData = await obtenerHistorialEstados(activo.id)
+    setHistorial(historialData as HistorialEstado[])
+    setHistorialLoading(false)
+  }
+
+  function exportarHistorialExcel() {
+    if (!selectedActivo || historial.length === 0) {
+      alert('No hay historial para exportar')
+      return
+    }
+
+    const datosExport = historial.map(item => ({
+      'Fecha': formatearFechaExcel(item.fecha_cambio),
+      'Hora': new Date(item.fecha_cambio).toLocaleTimeString('es-CL', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }),
+      'Estado': item.es_operativa ? 'Activada' : 'Desactivada',
+      'Usuario': item.usuarios?.nombre_completo || 'No disponible',
+      'Motivo': item.motivo || '-'
+    }))
+
+    const nombreArchivo = generarNombreArchivo(`historial_${selectedActivo.nombre}`, 'xlsx')
+    exportarAExcel(datosExport, nombreArchivo, `Historial ${selectedActivo.nombre}`)
+  }
+
+  function exportarHistorialCSV() {
+    if (!selectedActivo || historial.length === 0) {
+      alert('No hay historial para exportar')
+      return
+    }
+
+    const datosExport = historial.map(item => ({
+      'Fecha': formatearFechaExcel(item.fecha_cambio),
+      'Hora': new Date(item.fecha_cambio).toLocaleTimeString('es-CL', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }),
+      'Estado': item.es_operativa ? 'Activada' : 'Desactivada',
+      'Usuario': item.usuarios?.nombre_completo || 'No disponible',
+      'Motivo': item.motivo || '-'
+    }))
+
+    const nombreArchivo = generarNombreArchivo(`historial_${selectedActivo.nombre}`, 'csv')
+    exportarACSV(datosExport, nombreArchivo)
   }
 
   async function handleCrearGrua() {
@@ -354,66 +424,57 @@ export default function GruasPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
+            <div className="flex flex-col items-center text-center">
               <div className="bg-blue-50 rounded-full p-3">
                 <Forklift className="w-6 h-6 text-blue-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Total Grúas</p>
-                <p className="text-2xl font-bold text-gray-900">{activos.length}</p>
-              </div>
+              <p className="text-sm text-gray-600 mt-3">Total Grúas</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{activos.length}</p>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
+            <div className="flex flex-col items-center text-center">
               <div className="bg-green-50 rounded-full p-3">
                 <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Operativas</p>
-                <p className="text-2xl font-bold text-green-600">{activasCount}</p>
-              </div>
+              <p className="text-sm text-gray-600 mt-3">Operativas</p>
+              <p className="text-2xl font-bold text-green-600 mt-1">{activasCount}</p>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
+            <div className="flex flex-col items-center text-center">
               <div className="bg-red-50 rounded-full p-3">
                 <AlertCircle className="w-6 h-6 text-red-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Inactivas</p>
-                <p className="text-2xl font-bold text-red-600">{inactivasCount}</p>
-              </div>
+              <p className="text-sm text-gray-600 mt-3">Inactivas</p>
+              <p className="text-2xl font-bold text-red-600 mt-1">{inactivasCount}</p>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
+            <div className="flex flex-col items-center text-center">
               <div className="bg-yellow-50 rounded-full p-3">
                 <Timer className="w-6 h-6 text-yellow-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Horas de uso (30 días)</p>
-                <p className="text-2xl font-bold text-gray-900">{formatHoras(totalesUso.horasUso30)} h</p>
-                <p className="text-xs text-gray-500 mt-1">timos 7 días: {formatHoras(totalesUso.horasUso7)} h</p>
-              </div>
+              <p className="text-sm text-gray-600 mt-3">Horas de uso</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{formatHoras(totalesUso.horasUso30)} h</p>
+              <p className="text-xs text-gray-500 mt-1">Últimos 30 días</p>
+              <p className="text-xs text-gray-500">7 días: {formatHoras(totalesUso.horasUso7)} h</p>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
+            <div className="flex flex-col items-center text-center">
               <div className="bg-purple-50 rounded-full p-3">
                 <BarChart3 className="w-6 h-6 text-purple-600" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Horómetros pendientes</p>
-                <p className="text-2xl font-bold text-purple-600">{totalesUso.horometrosPendientes}</p>
-                <p className="text-xs text-gray-500 mt-1">Problemas detectados 30d: {totalesUso.problemas30}</p>
-              </div>
+              <p className="text-sm text-gray-600 mt-3">Horómetros pendientes</p>
+              <p className="text-2xl font-bold text-purple-600 mt-1">{totalesUso.horometrosPendientes}</p>
+              <p className="text-xs text-gray-500 mt-1">Problemas: {totalesUso.problemas30}</p>
             </div>
           </div>
         </div>
@@ -514,10 +575,18 @@ export default function GruasPage() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => abrirHistorial(activo)}
+                        className="flex items-center justify-center px-3 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 font-medium cursor-pointer"
+                        title="Ver historial"
+                      >
+                        <History className="w-4 h-4 mr-1" />
+                        Historial
+                      </button>
                       <button
                         onClick={() => abrirEditarGrua(activo)}
-                        className="flex items-center px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 font-medium cursor-pointer"
+                        className="flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 font-medium cursor-pointer"
                         title="Editar grúa"
                       >
                         <Edit className="w-4 h-4 mr-1" />
@@ -525,7 +594,7 @@ export default function GruasPage() {
                       </button>
                       <button
                         onClick={() => handleCambiarEstado(activo)}
-                        className={`flex items-center px-3 py-2 rounded-md font-medium cursor-pointer ${
+                        className={`flex items-center justify-center px-3 py-2 rounded-md font-medium cursor-pointer ${
                           activo.es_operativa
                             ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                             : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -546,7 +615,7 @@ export default function GruasPage() {
                       </button>
                       <button
                         onClick={() => abrirEliminarGrua(activo)}
-                        className="flex items-center px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 font-medium cursor-pointer"
+                        className="flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 font-medium cursor-pointer"
                         title="Eliminar grúa"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
@@ -769,6 +838,145 @@ export default function GruasPage() {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 font-medium"
               >
                 {actionLoading ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog de Historial */}
+      {dialogType === 'historial' && selectedActivo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Historial de Cambios de Estado
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Grúa: <strong>{selectedActivo.nombre}</strong>
+                </p>
+              </div>
+              <button
+                onClick={cerrarDialogos}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Botones de Exportación */}
+            {!historialLoading && historial.length > 0 && (
+              <div className="flex gap-3 mb-4">
+                <ExportButton
+                  onExport={exportarHistorialExcel}
+                  label="Exportar a Excel"
+                  variant="primary"
+                  icon="excel"
+                  disabled={historial.length === 0}
+                />
+                <ExportButton
+                  onExport={exportarHistorialCSV}
+                  label="Exportar a CSV"
+                  variant="secondary"
+                  icon="csv"
+                  disabled={historial.length === 0}
+                />
+              </div>
+            )}
+
+            {historialLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                <p className="ml-3 text-gray-600">Cargando historial...</p>
+              </div>
+            ) : historial.length === 0 ? (
+              <div className="text-center py-12">
+                <History className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600">No hay historial de cambios disponible</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {historial.map((item, index) => {
+                  const fecha = new Date(item.fecha_cambio)
+                  const esUltimo = index === historial.length - 1
+
+                  return (
+                    <div key={item.id} className="relative">
+                      {/* Línea de conexión */}
+                      {!esUltimo && (
+                        <div className="absolute left-5 top-12 bottom-0 w-0.5 bg-gray-200"></div>
+                      )}
+
+                      <div className="flex gap-4">
+                        {/* Ícono de estado */}
+                        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                          item.es_operativa
+                            ? 'bg-green-100'
+                            : 'bg-red-100'
+                        }`}>
+                          {item.es_operativa ? (
+                            <Power className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <PowerOff className="w-5 h-5 text-red-600" />
+                          )}
+                        </div>
+
+                        {/* Contenido del cambio */}
+                        <div className="flex-1 bg-gray-50 rounded-lg p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                item.es_operativa
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {item.es_operativa ? 'Activada' : 'Desactivada'}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium text-gray-900">
+                                {fecha.toLocaleDateString('es-CL', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {fecha.toLocaleTimeString('es-CL', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-2 space-y-1">
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Usuario:</span>{' '}
+                              {item.usuarios?.nombre_completo || 'No disponible'}
+                            </p>
+                            {item.motivo && (
+                              <p className="text-sm text-gray-600">
+                                <span className="font-medium">Motivo:</span>{' '}
+                                {item.motivo}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="mt-6">
+              <button
+                onClick={cerrarDialogos}
+                className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                Cerrar
               </button>
             </div>
           </div>
