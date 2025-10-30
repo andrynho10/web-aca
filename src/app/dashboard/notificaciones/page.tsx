@@ -176,9 +176,10 @@ export default function NotificacionesPage() {
       setDestinatariosEmail([...destinatariosEmail, { ...data, gruas_asignadas: [] }])
       setNuevoEmail('')
       setNuevoNombre('')
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error agregando destinatario:', error)
-      alert('Error al agregar destinatario: ' + error.message)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      alert('Error al agregar destinatario: ' + errorMessage)
     }
   }
 
@@ -194,9 +195,10 @@ export default function NotificacionesPage() {
       if (error) throw error
 
       setDestinatariosEmail(destinatariosEmail.filter(d => d.id !== id))
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error eliminando destinatario:', error)
-      alert('Error al eliminar destinatario: ' + error.message)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      alert('Error al eliminar destinatario: ' + errorMessage)
     }
   }
 

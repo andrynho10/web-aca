@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Forklift, Power, PowerOff, AlertCircle, CheckCircle, Timer, BarChart3, Plus, Edit, Trash2, X, History } from 'lucide-react'
+import { Forklift, Power, PowerOff, AlertCircle, CheckCircle, Timer, Plus, Edit, Trash2, X, History } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import {
   cambiarEstadoActivo,

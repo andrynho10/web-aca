@@ -9,7 +9,6 @@ import {
   CheckCircle,
   Clock,
   Forklift,
-  TrendingUp,
   Users,
   Timer,
   RefreshCw,
