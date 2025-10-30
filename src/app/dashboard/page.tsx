@@ -15,7 +15,8 @@ import {
   RefreshCw,
   Menu,
   X,
-  FileText
+  FileText,
+  Settings
 } from 'lucide-react'
 import { KPICard } from '@/components/KPICard'
 import { getCurrentUser, logout } from '@/lib/auth'
@@ -623,25 +624,25 @@ export default function DashboardPage() {
 
             {/* Sección Centro: Botones de Navegación (solo desktop) */}
             <div className="hidden lg:flex items-center justify-center">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {/* Botón de Gestión de Grúas */}
                 <button
                   onClick={() => navegarA('/dashboard/gruas')}
                   disabled={navegando !== null}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-blue-600 text-white text-base font-normal rounded-md hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                  className="flex items-center justify-center w-[150px] px-3 py-2 bg-blue-600 text-white text-base font-normal rounded-md hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
                   {navegando === '/dashboard/gruas' ? (
                     <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
                   ) : (
                     <Forklift className="w-4 h-4 mr-2 flex-shrink-0" />
                   )}
-                  <span className="whitespace-nowrap">Gestión de Grúas</span>
+                  <span className="whitespace-nowrap">Gestión Grúas</span>
                 </button>
                 {/* Botón Reportes */}
                 <button
                   onClick={() => navegarA('/dashboard/reportes')}
                   disabled={navegando !== null}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-cyan-600 text-white text-base font-normal rounded-md hover:bg-cyan-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                  className="flex items-center justify-center w-[150px] px-3 py-2 bg-cyan-600 text-white text-base font-normal rounded-md hover:bg-cyan-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
                   {navegando === '/dashboard/reportes' ? (
                     <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
@@ -654,7 +655,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => navegarA('/dashboard/heatmap')}
                   disabled={navegando !== null}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-purple-600 text-white text-base font-normal rounded-md hover:bg-purple-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                  className="flex items-center justify-center w-[150px] px-3 py-2 bg-purple-600 text-white text-base font-normal rounded-md hover:bg-purple-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
                   {navegando === '/dashboard/heatmap' ? (
                     <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
@@ -667,7 +668,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => navegarA('/dashboard/horometros')}
                   disabled={navegando !== null}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-green-600 text-white text-base font-normal rounded-md hover:bg-green-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                  className="flex items-center justify-center w-[150px] px-3 py-2 bg-green-600 text-white text-base font-normal rounded-md hover:bg-green-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
                   {navegando === '/dashboard/horometros' ? (
                     <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
@@ -680,7 +681,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => navegarA('/dashboard/operadores')}
                   disabled={navegando !== null}
-                  className="flex items-center justify-center w-[160px] px-4 py-2 bg-orange-600 text-white text-base font-normal rounded-md hover:bg-orange-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                  className="flex items-center justify-center w-[150px] px-3 py-2 bg-orange-600 text-white text-base font-normal rounded-md hover:bg-orange-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
                   {navegando === '/dashboard/operadores' ? (
                     <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
@@ -693,7 +694,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => navegarA('/dashboard/problemas-criticos')}
                   disabled={navegando !== null}
-                  className="flex items-center justify-center w-[180px] px-4 py-2 bg-red-600 text-white text-base font-normal rounded-md hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                  className="flex items-center justify-center w-[170px] px-3 py-2 bg-red-600 text-white text-base font-normal rounded-md hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                 >
                   {navegando === '/dashboard/problemas-criticos' ? (
                     <RefreshCw className="w-4 h-4 mr-2 flex-shrink-0 animate-spin" />
@@ -707,6 +708,21 @@ export default function DashboardPage() {
 
             {/* Sección Derecha: Cerrar Sesión y Hamburguesa */}
             <div className="flex items-center justify-end gap-3">
+              {/* Botón Notificaciones - Solo Ícono (solo desktop) */}
+              <button
+                onClick={() => navegarA('/dashboard/notificaciones')}
+                disabled={navegando !== null}
+                className="hidden lg:flex items-center justify-center p-2.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                title="Configurar notificaciones"
+                aria-label="Configurar notificaciones"
+              >
+                {navegando === '/dashboard/notificaciones' ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Settings className="w-5 h-5" />
+                )}
+              </button>
+
               {/* Botón Cerrar Sesión (solo desktop) */}
               <button
                 onClick={handleLogout}
@@ -1067,7 +1083,7 @@ export default function DashboardPage() {
                 ) : (
                   <Forklift className="w-5 h-5 mr-3" />
                 )}
-                <span className="font-medium">Gestión de Grúas</span>
+                <span className="font-medium">Gestión Grúas</span>
               </button>
 
               <button
@@ -1148,6 +1164,22 @@ export default function DashboardPage() {
                   <AlertTriangle className="w-5 h-5 mr-3" />
                 )}
                 <span className="font-medium">Problemas Críticos</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  navegarA('/dashboard/notificaciones')
+                  setMenuMovilAbierto(false)
+                }}
+                disabled={navegando !== null}
+                className="flex items-center px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+              >
+                {navegando === '/dashboard/notificaciones' ? (
+                  <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                ) : (
+                  <Settings className="w-5 h-5 mr-3" />
+                )}
+                <span className="font-medium">Configuración</span>
               </button>
 
               <div className="pt-4 border-t border-gray-200">
