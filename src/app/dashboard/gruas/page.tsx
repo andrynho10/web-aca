@@ -76,10 +76,9 @@ export default function GruasPage() {
         acc.horasUso7 += item.horasUso7
         acc.horasUso30 += item.horasUso30
         acc.problemas30 += item.problemas30
-        acc.horometrosPendientes += item.horometrosPendientes
         return acc
       },
-      { horasUso7: 0, horasUso30: 0, problemas30: 0, horometrosPendientes: 0 }
+      { horasUso7: 0, horasUso30: 0, problemas30: 0 }
     )
   }, [resumenUso])
 
@@ -424,7 +423,7 @@ export default function GruasPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex flex-col items-center text-center">
               <div className="bg-blue-50 rounded-full p-3">
@@ -467,16 +466,6 @@ export default function GruasPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex flex-col items-center text-center">
-              <div className="bg-purple-50 rounded-full p-3">
-                <BarChart3 className="w-6 h-6 text-purple-600" />
-              </div>
-              <p className="text-sm text-gray-600 mt-3">Horómetros pendientes</p>
-              <p className="text-2xl font-bold text-purple-600 mt-1">{totalesUso.horometrosPendientes}</p>
-              <p className="text-xs text-gray-500 mt-1">Problemas: {totalesUso.problemas30}</p>
-            </div>
-          </div>
         </div>
 
         {/* Lista de Grúas */}
@@ -492,7 +481,6 @@ export default function GruasPage() {
               const horasUso30 = resumen?.horasUso30 ?? 0
               const inspecciones30 = resumen?.inspecciones30 ?? 0
               const problemas30 = resumen?.problemas30 ?? 0
-              const horometrosPend = resumen?.horometrosPendientes ?? 0
 
               return (
                 <div key={activo.id} className="p-6 hover:bg-gray-50">
@@ -546,7 +534,7 @@ export default function GruasPage() {
                           )}
                         </div>
 
-                        <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-gray-600">
+                        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
                           <div>
                             <p className="text-xs text-gray-500 uppercase tracking-wide">Horas uso 7d</p>
                             <p className="font-semibold text-gray-900">{formatHoras(horasUso7)} h</p>
@@ -563,12 +551,6 @@ export default function GruasPage() {
                             <p className="text-xs text-gray-500 uppercase tracking-wide">Problemas 30d</p>
                             <p className={`font-semibold ${problemas30 > 0 ? 'text-red-600' : 'text-gray-900'}`}>
                               {problemas30}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide">Horómetros pendientes</p>
-                            <p className={`font-semibold ${horometrosPend > 0 ? 'text-orange-600' : 'text-gray-900'}`}>
-                              {horometrosPend}
                             </p>
                           </div>
                         </div>
