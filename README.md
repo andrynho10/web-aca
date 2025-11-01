@@ -171,6 +171,22 @@ webaca es parte de un sistema completo que incluye:
 - Tendencia histórica
 - Priorización por criticidad
 
+### 🔔 Configuración de Notificaciones
+- **Gestión de Destinatarios de Email:**
+  - Agregar/eliminar destinatarios de correo
+  - Asignación granular de grúas por destinatario
+  - Si no se asignan grúas, recibe notificaciones de TODAS las grúas
+  - Interfaz intuitiva con checkboxes por grúa
+- **Gestión de Notificaciones Push (Móvil):**
+  - Configuración de qué grúas monitorea cada supervisor
+  - Asignación individual por supervisor en la app móvil
+  - Si no se asignan grúas, recibe notificaciones push de TODAS
+- Dos pestañas: Email y Push Notifications
+- Guardado de configuración en tablas intermedias:
+  - `email_destinatarios_activos` (relación many-to-many email-grúa)
+  - `supervisores_activos` (relación many-to-many supervisor-grúa)
+- Eliminación en cascada de asignaciones al cambiar configuración
+
 ### 🔄 Sistema de Actualización en Tiempo Real
 - Subscripción a tabla `reportes_inspeccion` con Supabase Realtime
 - Actualización automática en INSERT/UPDATE
@@ -468,8 +484,11 @@ webaca/
 │   │       ├── operadores/
 │   │       │   └── page.tsx            # Panel de operadores
 │   │       │
-│   │       └── problemas-criticos/
-│   │           └── page.tsx            # Problemas detectados
+│   │       ├── problemas-criticos/
+│   │       │   └── page.tsx            # Problemas detectados
+│   │       │
+│   │       └── notificaciones/
+│   │           └── page.tsx            # Configuración de notificaciones (478 líneas)
 │   │
 │   ├── components/
 │   │   ├── KPICard.tsx                  # Tarjeta de KPI
@@ -535,6 +554,7 @@ webaca/
 | `/dashboard/horometros` | `app/dashboard/horometros/page.tsx` | Análisis de horómetros |
 | `/dashboard/operadores` | `app/dashboard/operadores/page.tsx` | Panel de operadores |
 | `/dashboard/problemas-criticos` | `app/dashboard/problemas-criticos/page.tsx` | Problemas críticos |
+| `/dashboard/notificaciones` | `app/dashboard/notificaciones/page.tsx` | Configuración de notificaciones |
 
 ### Middleware
 
