@@ -513,11 +513,6 @@ webaca/
 │   ├── logo.svg
 │   └── [Assets estáticos]
 │
-├── supabase/                             # ⚠️ Local (puede estar desactualizado)
-│   ├── migrations/                      # Migraciones SQL (desarrollo)
-│   ├── functions/                       # Edge Functions (desarrollo)
-│   └── [Archivos de configuración]
-│
 ├── .env.example                         # Ejemplo de variables de entorno
 ├── .env.local                           # ⚠️ NO COMMITEAR
 ├── next.config.ts                       # Configuración de Next.js
