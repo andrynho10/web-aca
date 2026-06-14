@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
@@ -223,6 +223,8 @@ export default function DashboardPage() {
   const [mostrarTodasGruasProblematicas, setMostrarTodasGruasProblematicas] = useState(false)
   const [navegando, setNavegando] = useState<string | null>(null)
 
+  const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const tendenciaDataset = useMemo(() => {
     return tendencia
       .map((item) => {
@@ -345,7 +347,8 @@ export default function DashboardPage() {
         },
         (payload) => {
           console.log('Nuevo reporte detectado:', payload.new)
-          cargarDatos(true) // Actualización silenciosa
+          if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
+          realtimeDebounceRef.current = setTimeout(() => cargarDatos(true), 2000)
         }
       )
       .on(
@@ -357,7 +360,8 @@ export default function DashboardPage() {
         },
         (payload) => {
           console.log('Reporte actualizado:', payload.new)
-          cargarDatos(true)
+          if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
+          realtimeDebounceRef.current = setTimeout(() => cargarDatos(true), 2000)
         }
       )
       .subscribe((status) => {
@@ -372,6 +376,7 @@ export default function DashboardPage() {
     return () => {
       console.log('Desconectando Realtime...')
       supabase.removeChannel(channel)
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
     }
   }, [usuario, cargarDatos])
 
