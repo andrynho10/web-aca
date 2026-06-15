@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [redirectUrl, setRedirectUrl] = useState('/dashboard')
 
+  // Lee el parámetro ?redirect= para redirigir al recurso original tras un login exitoso
   useEffect(() => {
     // Obtener parámetro redirect de la URL
     const params = new URLSearchParams(window.location.search)
@@ -22,25 +23,25 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('🔐 Iniciando login...')
+    console.log('Iniciando login...')
     setError('')
     setLoading(true)
 
     try {
-      console.log('📧 Email:', email)
+      console.log('Email:', email)
       const result = await loginSupervisor(email, password)
-      console.log('✅ Resultado login:', result)
+      console.log('Resultado login:', result)
 
       if (result.success) {
-        console.log('🎉 Login exitoso, redirigiendo a:', redirectUrl)
-        // Usar window.location para forzar recarga y que el middleware vea la cookie
+        console.log('Login exitoso, redirigiendo a:', redirectUrl)
+        // window.location en lugar de router.push para forzar recarga completa y que el middleware SSR vea la cookie
         window.location.href = redirectUrl
       } else {
-        console.error('❌ Error de login:', result.error)
+        console.error('Error de login:', result.error)
         setError(result.error || 'Error al iniciar sesión')
       }
     } catch (err) {
-      console.error('💥 Error inesperado:', err)
+      console.error('Error inesperado:', err)
       setError('Error inesperado al iniciar sesión')
     }
 

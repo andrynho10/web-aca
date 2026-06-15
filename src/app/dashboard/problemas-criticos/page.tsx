@@ -79,6 +79,8 @@ export default function ProblemasCriticosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dias])
 
+  // Toggle de drilldown: al hacer clic en un problema carga evolución + activos afectados en paralelo;
+  // un segundo clic sobre el mismo cierra el panel de detalle
   async function seleccionarProblema(preguntaId: number) {
     if (problemaSeleccionado === preguntaId) {
       // Si ya está seleccionado, deseleccionar
@@ -87,7 +89,7 @@ export default function ProblemasCriticosPage() {
       setActivosAfectados([])
     } else {
       setProblemaSeleccionado(preguntaId)
-      
+
       // Cargar datos detallados
       const [evolucionData, activosData] = await Promise.all([
         obtenerEvolucionProblema(preguntaId, 90),

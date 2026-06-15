@@ -12,6 +12,10 @@ interface ExportButtonProps {
   className?: string
 }
 
+/**
+ * Botón de exportación con estado de carga interno; delega la lógica real a la función onExport
+ * inyectada por el padre (Excel o CSV según variant).
+ */
 export default function ExportButton({
   onExport,
   label = 'Exportar',
@@ -22,6 +26,7 @@ export default function ExportButton({
 }: ExportButtonProps) {
   const [loading, setLoading] = useState(false)
 
+  // Envuelve la función de exportación en loading/error para que el padre no tenga que manejar el estado
   const handleExport = async () => {
     setLoading(true)
     try {

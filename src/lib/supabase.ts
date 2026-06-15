@@ -1,8 +1,10 @@
 import { createBrowserClient } from '@supabase/ssr'
 
+// Variables de entorno requeridas en tiempo de build; el ! indica que se garantizan en runtime
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
+// Cliente Supabase singleton compartido por toda la app (solo lado cliente, usa cookies de SSR)
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
 
 // Tipos para las tablas principales
@@ -45,6 +47,7 @@ export interface ReporteInspeccion {
   horas_uso_omitidas: number | null
 }
 
+// Estructura de respuesta de la RPC obtener_kpis_dashboard
 export interface KPIsDashboard {
   total_reportes_hoy: number
   total_reportes_semana: number

@@ -60,6 +60,10 @@ export interface CorrelacionUsoProblemas {
   promedio_horas_por_inspeccion: number
 }
 
+/**
+ * Retorna todas las preguntas que fallaron al menos una vez, con criticidad calculada en BD,
+ * tendencia (EMPEORANDO/MEJORANDO/ESTABLE) y conteo de fotos de evidencia.
+ */
 export async function obtenerAnalisisProblemasCriticos(dias: number = 30) {
   try {
     const { data, error } = await supabase.rpc('obtener_analisis_problemas_criticos', { 
@@ -74,6 +78,7 @@ export async function obtenerAnalisisProblemasCriticos(dias: number = 30) {
   }
 }
 
+/** Filtra los problemas para una grúa concreta; útil en el drilldown de activo */
 export async function obtenerProblemasPorActivo(activoId: number, dias: number = 30) {
   try {
     const { data, error } = await supabase.rpc('obtener_problemas_por_activo', { 
@@ -89,6 +94,7 @@ export async function obtenerProblemasPorActivo(activoId: number, dias: number =
   }
 }
 
+/** Serie temporal de fallos de una pregunta concreta; alimenta el gráfico de evolución del problema */
 export async function obtenerEvolucionProblema(preguntaId: number, dias: number = 90) {
   try {
     const { data, error } = await supabase.rpc('obtener_evolucion_problema', { 
@@ -104,6 +110,7 @@ export async function obtenerEvolucionProblema(preguntaId: number, dias: number 
   }
 }
 
+/** Lista qué grúas han fallado en esa pregunta específica, con su tasa de fallo individual */
 export async function obtenerActivosAfectadosPorProblema(preguntaId: number, dias: number = 30) {
   try {
     const { data, error } = await supabase.rpc('obtener_activos_afectados_por_problema', {
@@ -134,6 +141,7 @@ export async function obtenerTopGruasProblematicas(limite: number = 20, dias: nu
   }
 }
 
+/** Reutiliza la RPC de horómetros v2 para cruzar horas de uso con tasa de problemas en esta vista */
 export async function obtenerCorrelacionUsoProblemas(dias: number = 90) {
   try {
     const { data, error } = await supabase.rpc('obtener_correlacion_horometro_problemas_v2', {

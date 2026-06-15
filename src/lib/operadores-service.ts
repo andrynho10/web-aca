@@ -27,6 +27,7 @@ export interface AnalisisCentroCosto {
   score_promedio: number
 }
 
+/** Devuelve métricas por operador (inspecciones, score, duración) solo para quienes tienen actividad en el período */
 export async function obtenerAnalisisOperadores(dias: number = 90) {
   try {
     const { data, error } = await supabase.rpc('obtener_analisis_operadores', { dias })
@@ -39,6 +40,7 @@ export async function obtenerAnalisisOperadores(dias: number = 90) {
   }
 }
 
+/** Agrega métricas por centro de costo para comparar desempeño entre grupos de operadores */
 export async function obtenerAnalisisCentroCosto(dias: number = 90) {
   try {
     const { data, error } = await supabase.rpc('obtener_analisis_centro_costo', { dias })
@@ -51,6 +53,11 @@ export async function obtenerAnalisisCentroCosto(dias: number = 90) {
   }
 }
 
+/**
+ * Une la lista completa de operadores (tabla usuarios) con sus métricas de inspección.
+ * Operadores sin inspecciones aparecen con valores en 0 y dias_desde_ultima = -1,
+ * así la tabla siempre muestra el padrón completo aunque no hayan inspeccionado.
+ */
 export async function obtenerTodosLosOperadores(dias: number = 90) {
   try {
     // Obtener análisis de operadores con inspecciones

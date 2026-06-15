@@ -52,6 +52,7 @@ type ReporteReciente = {
   horometro_pendiente: boolean
 }
 
+// Refresca la vista materializada antes de leer, ignorando errores de lock (55P03/55P02)
 async function cargarReportesRecientes() {
   try {
     const { error: refreshError } = await supabase.rpc('refresh_mv_reportes_recientes')
@@ -223,8 +224,10 @@ export default function DashboardPage() {
   const [mostrarTodasGruasProblematicas, setMostrarTodasGruasProblematicas] = useState(false)
   const [navegando, setNavegando] = useState<string | null>(null)
 
+  // Ref para debounce del Realtime: evita re-renders dobles cuando llegan INSERT+UPDATE casi simultáneos
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Normaliza y ordena los datos de tendencia para Recharts; calcula % de problemas en cliente
   const tendenciaDataset = useMemo(() => {
     return tendencia
       .map((item) => {
@@ -256,6 +259,7 @@ export default function DashboardPage() {
       })
   }, [tendencia])
 
+  // Filtra grúas sin horas registradas y ordena por uso en 30 días para el widget de ranking
   const topUso = useMemo(() => {
     return [...resumenUsoActivos]
       .filter((item) => item.horasUso30 > 0 || item.horasUso7 > 0)
@@ -266,6 +270,7 @@ export default function DashboardPage() {
   const gruasMostradas = mostrarTodasGruas ? topUso : topUso.slice(0, 5)
   const gruasProblematicasMostradas = mostrarTodasGruasProblematicas ? topGruas : topGruas.slice(0, 5)
 
+  // Carga en paralelo los 7 datasets del dashboard; modo silencioso evita mostrar spinner de carga completa
   const cargarDatos = useCallback(async (silencioso: boolean = false) => {
     if (!silencioso) {
       setLoading(true)
@@ -311,6 +316,7 @@ export default function DashboardPage() {
     }
   }, [])
 
+  // Guarda de autenticación: redirige a /login si no hay sesión o el rol no es SUPERVISOR
   const checkAuth = useCallback(async () => {
     const user = await getCurrentUser()
 
@@ -331,6 +337,8 @@ export default function DashboardPage() {
   // ========================================
   // REALTIME SUBSCRIPTION (Actualización Instantánea)
   // ========================================
+  // Escucha INSERT/UPDATE en reportes_inspeccion para refrescar el dashboard sin polling activo;
+  // el debounce de 2 s agrupa actualizaciones rápidas sucesivas en una sola recarga
   useEffect(() => {
     if (!usuario) return
 
@@ -383,6 +391,7 @@ export default function DashboardPage() {
   // ========================================
   // POLLING DE RESPALDO (cada 2 minutos)
   // ========================================
+  // Garantiza actualización aunque falle o se corte la suscripción Realtime
   useEffect(() => {
     if (!usuario) return
 
@@ -409,7 +418,7 @@ export default function DashboardPage() {
     router.push(ruta)
   }
 
-  // Funciones de exportación
+  // Genera Excel de 6 hojas con datos de los últimos 90 días obtenidos en una sola llamada paralela
   async function exportarDashboardCompleto() {
     try {
       // Calcular fecha hace 90 días
@@ -539,6 +548,7 @@ export default function DashboardPage() {
     }
   }
 
+  // Exportación ligera: solo los reportes planos en CSV, sin datos agregados
   async function exportarReportesCSV() {
     try {
       // Calcular fecha hace 90 días

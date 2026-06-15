@@ -51,6 +51,10 @@ export interface ReporteDetalle {
   }>
 }
 
+/**
+ * Carga un reporte completo con sus relaciones anidadas (activo, operador, respuestas, fotos);
+ * usado en la página de detalle de un reporte individual.
+ */
 export async function obtenerReporteDetalle(reporteId: string): Promise<ReporteDetalle | null> {
   try {
     const { data, error } = await supabase
@@ -83,6 +87,10 @@ export async function obtenerReporteDetalle(reporteId: string): Promise<ReporteD
   }
 }
 
+/**
+ * Consulta reportes aplicando filtros opcionales de fecha, activo, operador, turno y estado de problemas.
+ * Sin rango de fechas explícito limita a los últimos 30 días; cargarTodo elimina ese límite (máx 1000).
+ */
 export async function obtenerReportesConFiltros(
   fechaDesde?: string,
   fechaHasta?: string,

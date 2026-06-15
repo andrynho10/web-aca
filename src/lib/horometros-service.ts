@@ -52,6 +52,7 @@ export interface OperadorHorometroPendiente {
   }>
 }
 
+/** Cruza horas de uso vs. inspecciones con problemas por activo para detectar desgaste por uso */
 export async function obtenerCorrelacionHorometroProblemas(dias: number = 90) {
   try {
     const { data, error } = await supabase.rpc('obtener_correlacion_horometro_problemas_v2', { p_dias: dias })
@@ -64,6 +65,7 @@ export async function obtenerCorrelacionHorometroProblemas(dias: number = 90) {
   }
 }
 
+/** Calcula porcentaje de utilización de cada grúa respecto a las horas disponibles teóricas */
 export async function obtenerEficienciaHorometro(dias: number = 90) {
   try {
     const { data, error } = await supabase.rpc('obtener_eficiencia_horometro_v2', { p_dias: dias })
@@ -76,6 +78,7 @@ export async function obtenerEficienciaHorometro(dias: number = 90) {
   }
 }
 
+/** Devuelve el horómetro actual y los días sin actualización de cada grúa; sirve para detectar inactividad */
 export async function obtenerEstadoHorometros() {
   try {
     const { data, error } = await supabase.rpc('obtener_estado_horometros')
@@ -88,6 +91,7 @@ export async function obtenerEstadoHorometros() {
   }
 }
 
+/** Lista operadores que completaron inspecciones sin registrar el horómetro final, agrupados con sus reportes */
 export async function obtenerOperadoresHorometrosPendientes() {
   try {
     const { data, error } = await supabase.rpc('obtener_operadores_horometros_pendientes')
@@ -112,6 +116,7 @@ export interface ResumenHorasActivo {
   total_reportes: number
 }
 
+/** Resumen de horas registradas vs. omitidas por activo; permite filtrar por grúa específica */
 export async function obtenerResumenHorasActivo(activoId?: number, dias: number = 90) {
   try {
     const { data, error } = await supabase.rpc('obtener_resumen_horas_activo', {
@@ -127,6 +132,7 @@ export async function obtenerResumenHorasActivo(activoId?: number, dias: number 
   }
 }
 
+/** Dispara la RPC de recálculo de horas omitidas para un activo específico (operación costosa, usar con cuidado) */
 export async function recalcularHorasOmitidasActivo(activoId: number) {
   try {
     const { data, error } = await supabase.rpc('recalcular_horas_omitidas_activo', {
@@ -141,6 +147,7 @@ export async function recalcularHorasOmitidasActivo(activoId: number) {
   }
 }
 
+/** Recalcula horas omitidas para todos los activos a la vez; úsese solo en mantenimiento o migraciones */
 export async function recalcularTodasHorasOmitidas() {
   try {
     const { data, error } = await supabase.rpc('recalcular_todas_horas_omitidas')

@@ -22,6 +22,7 @@ export type ResumenUsoActivo = {
   horometrosPendientes: number
 }
 
+/** Lista todos los activos (grúas) ordenados por nombre; usada en selectores y tablas de gestión */
 export async function obtenerActivos() {
   try {
     const { data, error } = await supabase
@@ -37,6 +38,7 @@ export async function obtenerActivos() {
   }
 }
 
+/** Llama a la RPC para activar/desactivar una grúa y registrar el motivo en el historial de estados */
 export async function cambiarEstadoActivo(
   activoId: number,
   esOperativa: boolean,
@@ -79,6 +81,10 @@ export async function obtenerHistorialEstados(activoId: number) {
   }
 }
 
+/**
+ * Lee la tabla de agregados diarios pre-calculados (no ejecuta agregaciones en tiempo real).
+ * Normaliza el campo activo que Supabase puede devolver como objeto o array según la versión del SDK.
+ */
 export async function obtenerAgregadosDiariosActivos(dias: number = 30) {
   type AgregadoDiarioRaw = {
     activo_id: number | null
@@ -143,6 +149,10 @@ export async function obtenerAgregadosDiariosActivos(dias: number = 30) {
   }
 }
 
+/**
+ * Reduce los agregados diarios a un resumen por activo con acumulados de 30 y 7 días.
+ * Función pura (sin llamadas a BD); se puede llamar después de obtenerAgregadosDiariosActivos.
+ */
 export function construirResumenUsoActivos(
   agregados: AgregadoDiarioActivo[]
 ): ResumenUsoActivo[] {
@@ -194,9 +204,10 @@ export function construirResumenUsoActivos(
   }))
 }
 
-// Nueva función usando RPC para calcular horas de uso eficientemente
+// Alternativa más eficiente que leer agregados_diarios: dos llamadas RPC en paralelo (30d y 7d)
 export async function obtenerResumenUsoActivosRPC() {
   try {
+    // Carga paralela para minimizar latencia; los resultados se combinan en el cliente
     // Hacer dos llamadas en paralelo: una para 30 días y otra para 7 días
     const [resultado30, resultado7] = await Promise.all([
       supabase.rpc('obtener_correlacion_horometro_problemas', { dias: 30 }),

@@ -84,7 +84,9 @@ function agregarTextoConSalto(
 }
 
 /**
- * Exporta un reporte enfocado en preguntas malas con fotos incrustadas en PDF
+ * Genera un PDF completo del reporte de inspección: portada con datos del operador,
+ * lista de respuestas malas (con comentarios), lista comprimida de buenas,
+ * y sección de fotos de evidencia incrustadas en base64 con layout adaptativo portrait/landscape.
  */
 export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<void> {
   if (!reporte) {
@@ -101,7 +103,7 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
     const contentWidth = pageWidth - 2 * margin
     let yPosition = margin
 
-    // Función para agregar nueva página si es necesario
+    // Guarda de paginación: agrega nueva página si el contenido siguiente no cabe en la actual
     const agregarPaginaSiNecesario = (espacioRequerido: number) => {
       if (yPosition + espacioRequerido > pageHeight - margin) {
         pdf.addPage()
@@ -109,6 +111,7 @@ export async function exportarReporteConFotos(reporte: ReporteDetalle): Promise<
       }
     }
 
+    // Separar respuestas para tratarlas con distinta densidad visual en el PDF
     // Filtrar respuestas Malas y Buenas
     const respuestasMalas = reporte.respuestas.filter(resp => !resp.respuesta)
     const respuestasBuenas = reporte.respuestas.filter(resp => resp.respuesta)

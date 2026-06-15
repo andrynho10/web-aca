@@ -1,5 +1,9 @@
 import { LucideIcon } from 'lucide-react'
 
+/**
+ * Tarjeta de métrica reutilizable; se renderiza como <button> clickable o <div> estático
+ * según las props clickable y onClick.
+ */
 interface KPICardProps {
   title: string
   value: string | number
@@ -44,6 +48,7 @@ export function KPICard({
     </div>
   )
 
+  // Versión interactiva: envuelve el contenido en un botón para accesibilidad y navegación
   if (clickable && onClick) {
     return (
       <button

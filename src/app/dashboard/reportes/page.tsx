@@ -76,6 +76,7 @@ function ReportesContent() {
     }
   }, [])
 
+  // Permite pasar overrides de filtros sin esperar el re-render de estado; útil al aplicar filtros de URL inmediatamente
   const cargarReportes = useCallback(async (overrides: ReportesFiltroOverrides = {}, cargarTodo = false) => {
     const fechaDesdeValue = Object.prototype.hasOwnProperty.call(overrides, 'fechaDesde')
       ? overrides.fechaDesde
@@ -113,6 +114,7 @@ function ReportesContent() {
     setMostrandoLimitado(!cargarTodo && !tieneRangoFechas)
   }, [fechaDesde, fechaHasta, activoSeleccionado, operadorSeleccionado, turnoSeleccionado, soloProblemas])
 
+  // Verifica rol SUPERVISOR y carga activos + usuarios en paralelo antes de renderizar filtros
   const checkAuthAndLoad = useCallback(async () => {
     const user = await getCurrentUser()
 
@@ -126,6 +128,7 @@ function ReportesContent() {
       cargarUsuarios()
     ])
 
+    // Si la URL ya trae filtros (desde el dashboard), no se cargan reportes sin filtrar para evitar carga innecesaria
     const hasUrlFilters = ['problemas', 'activo', 'desde', 'hasta'].some((param) => searchParams.has(param))
 
     // Solo cargar reportes inicialmente si NO hay filtros desde URL
@@ -183,6 +186,7 @@ function ReportesContent() {
     }
   }, [searchParams])
 
+  // Dispara la carga de reportes cuando los filtros de URL han sido procesados (evita múltiples ejecuciones)
   useEffect(() => {
     if (filtrosAplicados && !loading) {
       void cargarReportes()

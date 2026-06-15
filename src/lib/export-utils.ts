@@ -115,7 +115,7 @@ export function exportarAExcel(data: Array<Record<string, unknown>>, nombreArchi
 }
 
 /**
- * Exporta datos a un archivo Excel con múltiples hojas
+ * Exporta datos a un archivo Excel con múltiples hojas; omite hojas vacías para evitar errores de XLSX
  */
 export function exportarAExcelMultiplesHojas(
   hojas: Array<{ nombre: string; datos: Array<Record<string, unknown>> }>,
@@ -151,7 +151,8 @@ export function exportarAExcelMultiplesHojas(
 }
 
 /**
- * Exporta datos a un archivo CSV
+ * Exporta datos a CSV usando XLSX como intermediario para garantizar encoding correcto;
+ * dispara descarga mediante un <a> temporal en el DOM
  */
 export function exportarACSV(data: Array<Record<string, unknown>>, nombreArchivo: string) {
   if (!data || data.length === 0) {

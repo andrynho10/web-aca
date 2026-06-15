@@ -16,6 +16,10 @@ interface HeatmapProps {
   onCellClick?: (activoId: number, fecha: string) => void
 }
 
+/**
+ * Grilla grúa × día coloreada por score de cumplimiento; cada celda es clickable para drilldown.
+ * Limita las columnas a los últimos 30 días distintos presentes en los datos.
+ */
 export function Heatmap({ data, onCellClick }: HeatmapProps) {
   // Obtener grúas únicas
   const gruas = Array.from(new Set(data.map(d => d.activo_nombre))).sort()
@@ -23,6 +27,7 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
   // Obtener fechas únicas ordenadas cronológicamente (más antigua a la izquierda)
   const fechas = Array.from(new Set(data.map(d => d.fecha))).sort().slice(-30)
 
+  // Índice grua→fecha→celda para O(1) en lugar de Array.find por cada celda renderizada
   // Crear matriz de datos
   const matriz: Record<string, Record<string, HeatmapData | null>> = {}
   
@@ -34,7 +39,7 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
     })
   })
 
-  // Función para obtener color según score
+  // Mapea rangos de score a clases Tailwind: verde ≥95, amarillo 75-84, rojo <65
   function getColorByScore(score: number | null) {
     if (score === null) return 'bg-gray-100'
     if (score >= 95) return 'bg-green-500'
@@ -44,6 +49,7 @@ export function Heatmap({ data, onCellClick }: HeatmapProps) {
     return 'bg-red-500'
   }
 
+  // Parsea "YYYY-MM-DD" sin depender de la zona horaria del navegador (evita desfase de un día)
   function buildDateFromString(dateString: string) {
     const parts = dateString.split('-').map(Number)
     if (parts.length === 3 && parts.every(part => !Number.isNaN(part))) {

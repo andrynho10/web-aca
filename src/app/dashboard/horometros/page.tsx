@@ -45,6 +45,7 @@ export default function HorometrosPage() {
   const [operadoresPendientes, setOperadoresPendientes] = useState<OperadorHorometroPendiente[]>([])
   const [usuario, setUsuario] = useState<{ rol: string } | null>(null)
 
+  // Carga los cuatro datasets de horómetros en paralelo; silencioso=true solo activa spinner secundario
   const cargarDatos = useCallback(async (silencioso: boolean = false) => {
     if (!silencioso) {
       setLoading(true)
@@ -53,6 +54,7 @@ export default function HorometrosPage() {
     }
 
     try {
+      // Carga paralela: correlación, eficiencia, estado actual y operadores pendientes
       const [correlacionData, eficienciaData, estadoData, pendientesData] = await Promise.all([
           obtenerCorrelacionHorometroProblemas(dias),
           obtenerEficienciaHorometro(dias),
