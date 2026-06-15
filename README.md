@@ -303,11 +303,9 @@ Dashboard disponible en: **http://localhost:3000**
 # .env.local
 
 # Supabase (requerido)
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
-# Opcional: Para analytics
-NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 ```
 
 ### Next.js Config
@@ -733,7 +731,7 @@ npm run build
 2. **Configurar Variables de Entorno:**
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=
    ```
 
 3. **Deploy:**
