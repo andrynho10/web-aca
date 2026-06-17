@@ -607,16 +607,17 @@ export default function ReporteDetallePage() {
                                 <button
                                   key={idx}
                                   onClick={() => setImagenAmpliada(foto.url_storage)}
-                                  className="relative w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-colors"
+                                  className="group relative w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-colors"
                                 >
                                   <Image
                                     src={foto.url_storage}
                                     alt={`Foto ${idx + 1}`}
                                     fill
+                                    sizes="80px"
                                     className="object-cover"
                                   />
-                                  <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 flex items-center justify-center transition-opacity">
-                                    <ImageIcon className="w-5 h-5 text-white opacity-0 hover:opacity-100" />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                                    <ImageIcon className="w-5 h-5 text-white opacity-0 transition-opacity group-hover:opacity-100" />
                                   </div>
                                 </button>
                               ))}
