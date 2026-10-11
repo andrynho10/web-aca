@@ -53,28 +53,19 @@ flowchart LR
 - **One backend, two clients:** the dashboard and the mobile app share the same data model, so there is no extra API to maintain.
 - **Realtime + polling:** a Realtime subscription pushes new inspections to the live feed, and KPIs refresh periodically.
 
-<!-- SCREENSHOTS (pendiente: descomentar cuando se suban las imágenes a docs/screenshots/)
 ## Screenshots
 
-![Dashboard](docs/screenshots/dashboard.png)
+*Rendered with demo data (the original Supabase backend was decommissioned).*
+
+![Supervisor dashboard](docs/screenshots/dashboard.png)
 
 | Report detail | Failure heatmap |
 |---|---|
-| ![Report detail](docs/screenshots/report-detail.png) | ![Heatmap](docs/screenshots/heatmap.png) |
+| ![Report detail](docs/screenshots/report-detail.png) | ![Failure heatmap](docs/screenshots/heatmap.png) |
 
-| Hour-meter analytics | Excel / PDF export |
+| Hour meters vs. failures | Forklift management |
 |---|---|
-| ![Hour meters](docs/screenshots/hour-meters.png) | ![Export](docs/screenshots/export.png) |
-
- Capturas a tomar (ver instrucciones.md):
-1. dashboard.png: dashboard principal completo (KPIs, tendencia y feed "EN VIVO").
-2. report-detail.png: detalle de un reporte con fallas y galería de fotos.
-3. heatmap.png: heatmap de fallas.
-4. hour-meters.png: gráfico de correlación horas vs. problemas.
-5. export.png: el Excel exportado abierto (mostrando las hojas) o un PDF de reporte.
-Usar datos de prueba; ocultar nombres y RUT reales. 
-
--->
+| ![Hour-meter analytics](docs/screenshots/hour-meters.png) | ![Forklift management](docs/screenshots/asset-management.png) |
 
 ## How to run
 
